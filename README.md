@@ -1,0 +1,6 @@
+# Psich.ai
+
+## Setup
+
+TBD
+
