@@ -1,8 +1,19 @@
 import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Header from "./components/header";
+import Night from "./pages/night";
+//import Import from "./pages/import";
 
 export default function App() {
   return (
-    <div className="page">
+    <BrowserRouter>
+      <Header />
+      <Routes>
+        {/* <Route path="/import" element={<Import />} /> */}
+        <Route path="/night" element={<Night />} />
+      </Routes>
+    </BrowserRouter>
+    /*<div className="page">
       <header className="topbar">
         <div className="brand">
           <div className="brand-logo">
@@ -69,6 +80,6 @@ export default function App() {
           <a href="/">Terms</a>
         </div>
       </footer>
-    </div>
+    </div>*/
   );
 }

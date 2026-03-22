@@ -1,0 +1,90 @@
+.np-page {
+  max-width: 900px;
+  margin: auto;
+  padding: 40px 20px;
+  font-family: sans-serif;
+}
+
+/* DROPZONE */
+.np-dropzone {
+  border: 2px dashed #203d63;
+  padding: 30px;
+  text-align: center;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.np-upload-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: #203d63;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.np-upload-btn input {
+  display: none;
+}
+
+/* FILES */
+.np-files {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+/* OPTIONS */
+.np-options {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+/* BUTTON */
+button {
+  padding: 10px 20px;
+  background: #203d63;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* LOADING */
+.np-loading {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #ddd;
+  border-top: 4px solid #203d63;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* RESULTS */
+.np-results {
+  margin-top: 30px;
+  display: grid;
+  gap: 20px;
+}
+
+.np-card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.np-card img {
+  width: 100%;
+}
