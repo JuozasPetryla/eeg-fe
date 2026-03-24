@@ -1,7 +1,10 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "./components/header";
+import Footer from "./components/footer";
 import Night from "./pages/night";
+import Day from "./pages/day";
+import Home from "./pages/home";
 //import Import from "./pages/import";
 
 export default function App() {
@@ -10,8 +13,11 @@ export default function App() {
       <Header />
       <Routes>
         {/* <Route path="/import" element={<Import />} /> */}
+        <Route path="/" element={<Home />} />
         <Route path="/night" element={<Night />} />
+        <Route path="/day" element={<Day />} />
       </Routes>
+      <Footer />
     </BrowserRouter>
     /*<div className="page">
       <header className="topbar">

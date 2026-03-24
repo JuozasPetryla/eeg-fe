@@ -1,0 +1,35 @@
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  background-color: #149A85;
+  color: #ffffff;
+  font-size: 0.9rem;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.footer a {
+  color: #ffffff;
+  text-decoration: none;
+  margin-left: 16px;
+  transition: color 0.2s;
+}
+
+.footer a:hover {
+  color: #e0f7f1;
+}
+
+.footer-right {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+@media (min-width: 500px) {
+  .footer-right {
+    margin-top: 0;
+  }
+}

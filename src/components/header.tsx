@@ -6,7 +6,6 @@ import logo from "../assets/logo copy.png";
 const menuItems = [
   { to: "/day", label: "Dienos EEG signalai" },
   { to: "/night", label: "Nakties EEG signalai" },
-  { to: "/import", label: "Importuoti duomenis" },
   { to: "/settings", label: "Nustatymai" },
 ];
 

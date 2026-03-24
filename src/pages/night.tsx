@@ -24,12 +24,13 @@ export default function NightPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const dropped = Array.from(e.dataTransfer.files);
-    setFiles(dropped);
+    setFiles(prev => [...prev, ...dropped]);
   };
 
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    setFiles(Array.from(e.target.files));
+    const selected = Array.from(e.target.files);
+    setFiles(prev => [...prev, ...selected]);
   };
 
   const startAnalysis = async () => {
@@ -38,16 +39,42 @@ export default function NightPage() {
     setAnalyzing(true);
     setPlots(null);
 
-    // fake loading
-    setTimeout(() => {
-      setPlots({
-        scatter: "hypnogram_scatter.png",
-        classic: "hypnogram_classic.png",
-        heatmap: "hypnogram_heatmap.png",
-        stages: "stages.png"
+    try {
+      const formData = new FormData();
+      formData.append("file", files[0]);
+      formData.append("uploaded_by_user_id", "1");
+      formData.append("patient_id", "1");
+
+      const uploadRes = await fetch("http://localhost:8000/files/upload", {
+        method: "POST",
+        body: formData,
       });
+
+      const uploadData = await uploadRes.json();
+      const jobId = uploadData.analysis_job.id;
+
+      console.log("File uploaded, job ID:", jobId);
+
+      const poll = async () => {
+        const statusRes = await fetch(`http://localhost:8000/analysis-jobs/${jobId}/results`);
+        const statusData = await statusRes.json();
+
+        console.log("Job status:", statusData);
+
+        if(statusData.result && statusData.result.result_json) {
+          setPlots(statusData.result.result_json);
+          setAnalyzing(false);
+          return;
+        }
+        setTimeout(poll, 2000);
+      };
+      poll();
+    }
+       catch (err) {
+      console.error("Error during analysis:", err);
       setAnalyzing(false);
-    }, 2000);
+    }
+
   };
 
   return (
@@ -96,7 +123,23 @@ export default function NightPage() {
       {/* LOADING */}
       {analyzing && (
         <div className="np-loading">
-          <div className="spinner" />
+          <div className="sin-wave">
+            <svg viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg">
+              <path d="
+                M0 30 
+                Q20 0 40 30 
+                T80 30 
+                T120 30
+                T160 30
+                T200 30
+                T240 30
+                T280 30
+                T320 30
+                T360 30
+                T400 30
+        " stroke="#203d63" strokeWidth="2" fill="transparent"/>
+      </svg>
+    </div>
           <p>Analizuojamas miegas...</p>
         </div>
       )}
@@ -105,10 +148,12 @@ export default function NightPage() {
       {plots && (
         <div className="np-results">
           {VIZ_OPTIONS.filter(v => selectedCharts.includes(v.id)).map(v => (
-            <div key={v.id} className="np-card">
-              <h4>{v.label}</h4>
-              <img src={`/api/plots/${plots[v.id]}`} />
-            </div>
+            plots[v.id] ? (
+              <div key={v.id} className="np-card">
+                <h4>{v.label}</h4>
+                <img src={plots[v.id]} alt={v.label}/>
+              </div>
+            ) : null
           ))}
         </div>
       )}
