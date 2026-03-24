@@ -1,8 +1,25 @@
 import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Header from "./components/header";
+import Footer from "./components/footer";
+import Night from "./pages/night";
+import Day from "./pages/day";
+import Home from "./pages/home";
+//import Import from "./pages/import";
 
 export default function App() {
   return (
-    <div className="page">
+    <BrowserRouter>
+      <Header />
+      <Routes>
+        {/* <Route path="/import" element={<Import />} /> */}
+        <Route path="/" element={<Home />} />
+        <Route path="/night" element={<Night />} />
+        <Route path="/day" element={<Day />} />
+      </Routes>
+      <Footer />
+    </BrowserRouter>
+    /*<div className="page">
       <header className="topbar">
         <div className="brand">
           <div className="brand-logo">
@@ -69,6 +86,6 @@ export default function App() {
           <a href="/">Terms</a>
         </div>
       </footer>
-    </div>
+    </div>*/
   );
 }
