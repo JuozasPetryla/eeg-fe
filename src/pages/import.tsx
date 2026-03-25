@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Line } from "react-chartjs-2";
 import 'chart.js/auto';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -10,7 +10,6 @@ export default function App() {
 const [file, setFile] = useState<File | null>(null);
 const [progress, setProgress] = useState<number>(0);
 const [risk, setRisk] = useState<number>(0);
-const [analyzing, setAnalyzing] = useState<boolean>(false);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   if (!e.target.files) return;
@@ -20,7 +19,6 @@ const [analyzing, setAnalyzing] = useState<boolean>(false);
   const startAnalysis = () => {
     if (!file) return;
 
-    setAnalyzing(true);
     setProgress(0);
 
     // Fake progress

@@ -112,10 +112,57 @@ button {
   background: white;
   padding: 15px;
   border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(32, 61, 99, 0.08);
 }
 
 .np-card img {
   width: 100%;
+}
+
+.np-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.np-meta-grid p {
+  margin: 6px 0 0;
+  word-break: break-word;
+}
+
+.np-table-wrap {
+  overflow-x: auto;
+}
+
+.np-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.np-table th,
+.np-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #d8dee8;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.np-table th {
+  color: #203d63;
+}
+
+.np-json {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.np-error {
+  margin-top: 20px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fdebec;
+  color: #8a2432;
 }
 
 .custom-dropdown .btn {

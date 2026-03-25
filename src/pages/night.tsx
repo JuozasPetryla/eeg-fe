@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AnalysisResultView from "../components/analysis-result";
 import "./style.css";
 
 const VIZ_OPTIONS = [
@@ -10,15 +11,9 @@ const VIZ_OPTIONS = [
 
 export default function NightPage() {
   const [files, setFiles] = useState<File[]>([]);
-  const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  const [plots, setPlots] = useState<any>(null);
+  const [result, setResult] = useState<unknown>(null);
   const [analyzing, setAnalyzing] = useState(false);
-
-  const toggleChart = (id: string) => {
-    setSelectedCharts(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
-  };
+  const [error, setError] = useState<string | null>(null);
 
   // drag & drop
   const handleDrop = (e: React.DragEvent) => {
@@ -37,7 +32,8 @@ export default function NightPage() {
     if (!files.length) return;
 
     setAnalyzing(true);
-    setPlots(null);
+    setResult(null);
+    setError(null);
 
     try {
       const formData = new FormData();
@@ -49,6 +45,9 @@ export default function NightPage() {
         method: "POST",
         body: formData,
       });
+      if (!uploadRes.ok) {
+        throw new Error(`Failed to upload file: ${uploadRes.status}`);
+      }
 
       const uploadData = await uploadRes.json();
       const jobId = uploadData.analysis_job.id;
@@ -56,13 +55,21 @@ export default function NightPage() {
       console.log("File uploaded, job ID:", jobId);
 
       const poll = async () => {
-        const statusRes = await fetch(`http://localhost:8000/analysis-jobs/${jobId}/results`);
+        const statusRes = await fetch(`http://localhost:8000/analysis-jobs/${jobId}/result`);
+        if (!statusRes.ok) {
+          throw new Error(`Failed to fetch analysis result: ${statusRes.status}`);
+        }
         const statusData = await statusRes.json();
 
         console.log("Job status:", statusData);
 
         if(statusData.result && statusData.result.result_json) {
-          setPlots(statusData.result.result_json);
+          setResult(statusData.result.result_json);
+          setAnalyzing(false);
+          return;
+        }
+        if (statusData.job?.status === "completed" && !statusData.result) {
+          setError("Analizė baigta, bet rezultatai nebuvo rasti.");
           setAnalyzing(false);
           return;
         }
@@ -72,6 +79,7 @@ export default function NightPage() {
     }
        catch (err) {
       console.error("Error during analysis:", err);
+      setError(err instanceof Error ? err.message : "Nepavyko gauti analizės rezultatų.");
       setAnalyzing(false);
     }
 
@@ -108,7 +116,7 @@ export default function NightPage() {
           <label key={opt.id}>
             <input
               type="checkbox"
-              onChange={() => toggleChart(opt.id)}
+              disabled
             />
             {opt.label}
           </label>
@@ -144,19 +152,9 @@ export default function NightPage() {
         </div>
       )}
 
-      {/* RESULTS */}
-      {plots && (
-        <div className="np-results">
-          {VIZ_OPTIONS.filter(v => selectedCharts.includes(v.id)).map(v => (
-            plots[v.id] ? (
-              <div key={v.id} className="np-card">
-                <h4>{v.label}</h4>
-                <img src={plots[v.id]} alt={v.label}/>
-              </div>
-            ) : null
-          ))}
-        </div>
-      )}
+      {error && <p className="np-error">{error}</p>}
+
+      {result !== null && <AnalysisResultView result={result} />}
     </div>
   );
 }

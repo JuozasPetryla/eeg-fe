@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import { useState } from "react";
+import AnalysisResultView from "../components/analysis-result";
 import "./style.css";
 
 const adhdRe = [
@@ -76,8 +77,9 @@ function BasicButtonExample({
 export default function DayPage() {
   const [files, setFiles]               = useState<File[]>([]);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  const [plots, setPlots]               = useState<any>(null);
+  const [result, setResult]             = useState<unknown>(null);
   const [analyzing, setAnalyzing]       = useState(false);
+  const [error, setError]               = useState<string | null>(null);
 
   const toggleChart = (id: string) => {
     setSelectedCharts(prev =>
@@ -100,7 +102,8 @@ export default function DayPage() {
     if (!files.length) return;
 
     setAnalyzing(true);
-    setPlots(null);
+    setResult(null);
+    setError(null);
 
     try {
       const formData = new FormData();
@@ -112,6 +115,9 @@ export default function DayPage() {
         method: "POST",
         body: formData,
       });
+      if (!uploadRes.ok) {
+        throw new Error(`Failed to upload file: ${uploadRes.status}`);
+      }
 
       const uploadData = await uploadRes.json();
       const jobId = uploadData.analysis_job.id;
@@ -119,13 +125,21 @@ export default function DayPage() {
       console.log("File uploaded, job ID:", jobId);
 
       const poll = async () => {
-        const statusRes  = await fetch(`http://localhost:8000/analysis-jobs/${jobId}/results`);
+        const statusRes  = await fetch(`http://localhost:8000/analysis-jobs/${jobId}/result`);
+        if (!statusRes.ok) {
+          throw new Error(`Failed to fetch analysis result: ${statusRes.status}`);
+        }
         const statusData = await statusRes.json();
 
         console.log("Job status:", statusData);
 
         if (statusData.result && statusData.result.result_json) {
-          setPlots(statusData.result.result_json);
+          setResult(statusData.result.result_json);
+          setAnalyzing(false);
+          return;
+        }
+        if (statusData.job?.status === "completed" && !statusData.result) {
+          setError("Analizė baigta, bet rezultatai nebuvo rasti.");
           setAnalyzing(false);
           return;
         }
@@ -134,6 +148,7 @@ export default function DayPage() {
       poll();
     } catch (err) {
       console.error("Error during analysis:", err);
+      setError(err instanceof Error ? err.message : "Nepavyko gauti analizės rezultatų.");
       setAnalyzing(false);
     }
   };
@@ -197,23 +212,9 @@ export default function DayPage() {
         </div>
       )}
 
-      {/* RESULTS */}
-      {plots && (
-        <div className="np-results">
-          {all.flatMap(group =>
-            group.data
-              .filter(v => selectedCharts.includes(v.id))
-              .map(v =>
-                plots[v.id] ? (
-                  <div key={v.id} className="np-card">
-                    <h4>{group.title} — {v.label}</h4>
-                    <img src={plots[v.id]} alt={v.label} />
-                  </div>
-                ) : null
-              )
-          )}
-        </div>
-      )}
+      {error && <p className="np-error">{error}</p>}
+
+      {result !== null && <AnalysisResultView result={result} />}
     </div>
   );
 }
