@@ -56,10 +56,20 @@ function formatNumber(value: number | undefined, digits = 2, scientificThreshold
   return value.toFixed(digits);
 }
 
-export default function AnalysisResultView({ result }: { result: unknown }) {
+export default function AnalysisResultView({
+  result,
+  visibleBands,
+  visibleKeys,
+}: {
+  result: unknown;
+  visibleBands?: string[];
+  visibleKeys?: string[];
+}) {
   if (isStatisticalAnalysisResult(result)) {
     const info = result.informacija ?? {};
-    const bands = Object.entries(result.rezultatai ?? {});
+    const bands = Object.entries(result.rezultatai ?? {}).filter(([band]) =>
+      !visibleBands || visibleBands.length === 0 || visibleBands.includes(band.toLowerCase())
+    );
 
     return (
       <div className="np-results">
@@ -115,9 +125,13 @@ export default function AnalysisResultView({ result }: { result: unknown }) {
   }
 
   if (isImageMap(result)) {
+    const entries = Object.entries(result).filter(([key]) =>
+      !visibleKeys || visibleKeys.length === 0 || visibleKeys.includes(key)
+    );
+
     return (
       <div className="np-results">
-        {Object.entries(result).map(([key, value]) => (
+        {entries.map(([key, value]) => (
           <div key={key} className="np-card">
             <h4>{key}</h4>
             <img src={value} alt={key} />

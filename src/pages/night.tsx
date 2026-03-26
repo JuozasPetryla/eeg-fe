@@ -11,9 +11,18 @@ const VIZ_OPTIONS = [
 
 export default function NightPage() {
   const [files, setFiles] = useState<File[]>([]);
+  const [selectedVisualizations, setSelectedVisualizations] = useState<string[]>(
+    VIZ_OPTIONS.map((opt) => opt.id)
+  );
   const [result, setResult] = useState<unknown>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleVisualization = (id: string) => {
+    setSelectedVisualizations((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   // drag & drop
   const handleDrop = (e: React.DragEvent) => {
@@ -40,6 +49,7 @@ export default function NightPage() {
       formData.append("file", files[0]);
       formData.append("uploaded_by_user_id", "1");
       formData.append("patient_id", "1");
+      formData.append("analysis_type", "night");
 
       const uploadRes = await fetch("http://localhost:8000/files/upload", {
         method: "POST",
@@ -116,7 +126,8 @@ export default function NightPage() {
           <label key={opt.id}>
             <input
               type="checkbox"
-              disabled
+              checked={selectedVisualizations.includes(opt.id)}
+              onChange={() => toggleVisualization(opt.id)}
             />
             {opt.label}
           </label>
@@ -154,7 +165,9 @@ export default function NightPage() {
 
       {error && <p className="np-error">{error}</p>}
 
-      {result !== null && <AnalysisResultView result={result} />}
+      {result !== null && (
+        <AnalysisResultView result={result} visibleKeys={selectedVisualizations} />
+      )}
     </div>
   );
 }

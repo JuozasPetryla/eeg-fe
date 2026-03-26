@@ -5,6 +5,25 @@ import { useState } from "react";
 import AnalysisResultView from "../components/analysis-result";
 import "./style.css";
 
+const checkboxBands: Record<string, string[]> = {
+  "adhd-re1": ["theta"],
+  "adhd-re2": ["beta"],
+  "adhd-re3": ["theta", "beta"],
+  "adhd-re4": ["alpha"],
+  "depresija-re1": ["alpha"],
+  "depresija-re2": ["theta"],
+  "depresija-re3": ["beta"],
+  "depresija-re4": ["delta"],
+  "epilepsija-re1": ["delta"],
+  "epilepsija-re2": ["gamma"],
+  "epilepsija-re3": ["beta"],
+  "epilepsija-re4": ["theta"],
+  "migrena-re1": ["alpha"],
+  "migrena-re2": ["delta"],
+  "migrena-re3": ["gamma"],
+  "migrena-re4": ["beta"],
+};
+
 const adhdRe = [
   { id: "adhd-re1", label: "Theta ↑ (frontalinis)" },
   { id: "adhd-re2", label: "Beta ↓ (impulsyvumas)" },
@@ -86,6 +105,10 @@ export default function DayPage() {
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   };
+
+  const selectedBands = Array.from(
+    new Set(selectedCharts.flatMap((id) => checkboxBands[id] ?? []))
+  );
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -214,7 +237,9 @@ export default function DayPage() {
 
       {error && <p className="np-error">{error}</p>}
 
-      {result !== null && <AnalysisResultView result={result} />}
+      {result !== null && (
+        <AnalysisResultView result={result} visibleBands={selectedBands} />
+      )}
     </div>
   );
 }
