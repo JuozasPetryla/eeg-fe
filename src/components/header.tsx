@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import "./header.css";
-import logo from "../assets/logo copy.png";
+import logo from "../assets/newLogo.png";
 
 const menuItems = [
   { to: "/day", label: "Dienos EEG signalai" },
@@ -18,7 +18,6 @@ function Header() {
       <nav className="navbar custom-navbar">
         <NavLink className="navbar-brand" to="/">
           <img src={logo} alt="Logo" className="logo" />
-          <span className="brand-text">Psich.ai</span>
         </NavLink>
 
         <button

@@ -1,6 +1,4 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
 import { useState } from "react";
 import AnalysisResultView from "../components/analysis-result";
 import "./style.css";
@@ -23,6 +21,19 @@ const checkboxBands: Record<string, string[]> = {
   "migrena-re3": ["gamma"],
   "migrena-re4": ["beta"],
 };
+const diseases = [
+  { id: "adhd", label: "ADHD" },
+  { id: "depresija", label: "Depresija" },
+  { id: "epilepsija", label: "Epilepsija" },
+  { id: "migrena", label: "Migrena" },
+];
+const signals = [
+  { id: "theta", label: "Theta" },
+  { id: "alpha", label: "Alpha" },
+  { id: "beta", label: "Beta" },
+  { id: "delta", label: "Delta" },
+  { id: "gamma", label: "Gamma" },
+];
 
 const adhdRe = [
   { id: "adhd-re1", label: "Theta ↑ (frontalinis)" },
@@ -59,49 +70,22 @@ const all = [
   { title: "Migrena",   data: migrenaRe,   id: "migrena"   },
 ];
 
-function BasicButtonExample({
-  toggleChart,
-  selectedCharts,
-}: {
-  toggleChart: (id: string) => void;
-  selectedCharts: string[];
-}) {
-  return (
-    <div className="dropdownn" style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-      {all.map(group => (
-        <DropdownButton
-          key={group.id}
-          id={group.id}
-          title={group.title}
-          autoClose={true}
-          className="custom-dropdown"
-        >
-          {group.data.map(opt => (
-            <Dropdown.Item as="div" key={opt.id}>
-              <input
-                type="checkbox"
-                checked={selectedCharts.includes(opt.id)}
-                onClick={(e) => e.stopPropagation()}
-                onChange={() => toggleChart(opt.id)}
-              />
-              {opt.label}
-            </Dropdown.Item>
-          ))}
-        </DropdownButton>
-      ))}
-    </div>
-  );
-}
-
 export default function DayPage() {
   const [files, setFiles]               = useState<File[]>([]);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
+  const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
   const [result, setResult]             = useState<unknown>(null);
   const [analyzing, setAnalyzing]       = useState(false);
   const [error, setError]               = useState<string | null>(null);
 
   const toggleChart = (id: string) => {
     setSelectedCharts(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
+
+  const toggleDisease = (id: string) => {
+    setSelectedDiseases(prev =>
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   };
@@ -177,7 +161,26 @@ export default function DayPage() {
   };
 
   return (
-    <div className="np-page">
+    <div className="container">
+      <div className="left">
+        <aside className='dp-panel dp-panel--left'>
+          <h3>Pasirinkite analizės kriterijus:</h3>
+          <div className='dp-check-list'>
+            {signals.map(signal => (
+              <label key={signal.id} className='dp-check-row'>
+                <input
+                  type="checkbox"
+                  checked={selectedCharts.includes(signal.id)}
+                  onChange={() => toggleChart(signal.id)}
+                />
+                {signal.label}
+              </label>
+            ))}
+          </div>
+        </aside>
+      </div>
+      
+      <div className="np-page">
 
       {/* UPLOAD */}
       <div
@@ -199,8 +202,7 @@ export default function DayPage() {
         )}
       </div>
 
-      {/* DROPDOWN */}
-      <BasicButtonExample toggleChart={toggleChart} selectedCharts={selectedCharts} />
+      
 
       {/* BUTTON */}
       <button
@@ -238,8 +240,30 @@ export default function DayPage() {
       {error && <p className="np-error">{error}</p>}
 
       {result !== null && (
-        <AnalysisResultView result={result} visibleBands={selectedBands} />
+        <AnalysisResultView result={result} visibleBands={selectedBands} extraColumns={selectedDiseases.map(id => {
+          const disease = all.find(d => d.id === id);
+          return { title: disease!.title, items: disease!.data.map(d => d.label) };
+        })} />
       )}
     </div>
+    <div className="right">
+        <aside className='dp-panel dp-panel--right'>
+          <h3>Pasirinkite ligas:</h3>
+          <div className='dp-check-list'>
+            {diseases.map(disease => (
+              <label key={disease.id} className='dp-check-row'>
+                <input
+                  type="checkbox"
+                  checked={selectedDiseases.includes(disease.id)}
+                  onChange={() => toggleDisease(disease.id)}
+                />
+                {disease.label}
+              </label>
+            ))}
+          </div>
+        </aside>
+      </div>
+  </div>
+  
   );
 }

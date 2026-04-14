@@ -17,6 +17,11 @@ type StatisticalAnalysisResult = {
   rezultatai?: Record<string, BandMetrics>;
 };
 
+export type ExtraColumn = {
+  title: string;    // e.g. "ADHD"
+  items: string[];  // e.g. ["Theta ↑", "Beta ↓"]
+};
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -26,71 +31,73 @@ function isStatisticalAnalysisResult(value: unknown): value is StatisticalAnalys
 }
 
 function isImageMap(value: unknown): value is Record<string, string> {
-  if (!isObject(value)) {
-    return false;
-  }
-
+  if (!isObject(value)) return false;
   const entries = Object.entries(value);
-  return entries.length > 0 && entries.every(([, entryValue]) => typeof entryValue === "string");
+  return entries.length > 0 && entries.every(([, v]) => typeof v === "string");
 }
 
 function formatNumber(value: number | undefined, digits = 2, scientificThreshold?: number) {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return "N/A";
-  }
-
-  const absoluteValue = Math.abs(value);
+  if (typeof value !== "number" || Number.isNaN(value)) return "N/A";
+  const abs = Math.abs(value);
   const roundedToZero = value !== 0 && Number(value.toFixed(digits)) === 0;
-  const shouldUseScientific =
-    scientificThreshold !== undefined
-      ? absoluteValue < scientificThreshold
-      : roundedToZero;
-
-  if (shouldUseScientific) {
+  const useScientific =
+    scientificThreshold !== undefined ? abs < scientificThreshold : roundedToZero;
+  if (useScientific) {
     return value
       .toExponential(Math.max(0, digits - 1))
       .replace(/(\.\d*?[1-9])0+e/, "$1e")
       .replace(/\.0+e/, "e");
   }
-
   return value.toFixed(digits);
+}
+
+/**
+ * For a given band name (e.g. "Beta") and a list of selected arrow-labels
+ * (e.g. ["Theta ↑", "Beta ↓"]), find the matching arrow indicator.
+ * Matches by checking if the band name appears at the start of any item label.
+ */
+function getArrow(band: string, items: string[]): string {
+  const match = items.find((item) =>
+    item.toLowerCase().startsWith(band.toLowerCase())
+  );
+  if (!match) return "—";
+  if (match.includes("↑")) return "↑";
+  if (match.includes("↓")) return "↓";
+  return "—";
 }
 
 export default function AnalysisResultView({
   result,
   visibleBands,
   visibleKeys,
+  extraColumns = [],
 }: {
   result: unknown;
   visibleBands?: string[];
   visibleKeys?: string[];
+  extraColumns?: ExtraColumn[];
 }) {
   if (isStatisticalAnalysisResult(result)) {
     const info = result.informacija ?? {};
-    const bands = Object.entries(result.rezultatai ?? {}).filter(([band]) =>
-      !visibleBands || visibleBands.length === 0 || visibleBands.includes(band.toLowerCase())
+    const bands = Object.entries(result.rezultatai ?? {}).filter(
+      ([band]) =>
+        !visibleBands || visibleBands.length === 0 ||
+        visibleBands.includes(band.toLowerCase())
     );
 
     return (
       <div className="np-results">
+        {/* Meta card */}
         <div className="np-card">
           <h3>Analizės informacija</h3>
           <div className="np-meta-grid">
-            <div>
-              <strong>Failas</strong>
-              <p>{info.failas ?? "N/A"}</p>
-            </div>
-            <div>
-              <strong>Trukmė</strong>
-              <p>{formatNumber(info.trukme_sek)} s</p>
-            </div>
-            <div>
-              <strong>Diskretizacija</strong>
-              <p>{formatNumber(info.sfreq)} Hz</p>
-            </div>
+            <div><strong>Failas</strong><p>{info.failas ?? "N/A"}</p></div>
+            <div><strong>Trukmė</strong><p>{formatNumber(info.trukme_sek)} s</p></div>
+            <div><strong>Diskretizacija</strong><p>{formatNumber(info.sfreq)} Hz</p></div>
           </div>
         </div>
 
+        {/* Band results table */}
         <div className="np-card">
           <h3>Dažnių juostų rezultatai</h3>
           <div className="np-table-wrap">
@@ -103,6 +110,11 @@ export default function AnalysisResultView({
                   <th>Vid. amplitudė</th>
                   <th>Nuokrypis</th>
                   <th>Max amplitudė</th>
+                  {extraColumns.map((col) => (
+                    <th key={col.title} className="np-table__extra-th">
+                      {col.title}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -114,6 +126,20 @@ export default function AnalysisResultView({
                     <td>{formatNumber(metrics.vidurine_amplitude, 4)}</td>
                     <td>{formatNumber(metrics.nuokrypis, 4)}</td>
                     <td>{formatNumber(metrics.max_amplitude, 4, 1e-2)}</td>
+                    {extraColumns.map((col) => {
+                      const arrow = getArrow(band, col.items);
+                      return (
+                        <td key={col.title} className="np-table__extra-td">
+                          {arrow !== "—" ? (
+                            <span className={`np-arrow np-arrow--${arrow === "↑" ? "up" : "down"}`}>
+                              {arrow}
+                            </span>
+                          ) : (
+                            <span className="np-arrow np-arrow--none">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -125,10 +151,9 @@ export default function AnalysisResultView({
   }
 
   if (isImageMap(result)) {
-    const entries = Object.entries(result).filter(([key]) =>
-      !visibleKeys || visibleKeys.length === 0 || visibleKeys.includes(key)
+    const entries = Object.entries(result).filter(
+      ([key]) => !visibleKeys || visibleKeys.length === 0 || visibleKeys.includes(key)
     );
-
     return (
       <div className="np-results">
         {entries.map(([key, value]) => (
