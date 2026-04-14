@@ -5,13 +5,70 @@
   font-family: sans-serif;
 }
 
+.container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  max-width: auto;
+  margin-top: 3rem;
+  padding: 40px 20px;
+  font-family: sans-serif;
+}
+
+.left {
+  flex: 0 0 250px;
+  margin-right: 10rem;
+}
+
+.right {
+  flex: 0 0 250px;
+  margin-left: 10rem;
+}
+
+.np-page {
+  flex: 1;
+  padding: 40px 20px;
+  font-family: sans-serif;
+}
+
+.dp-panel {
+  background: #149A85;
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+}
+
+.dp-panel h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.dp-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dp-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.dp-check-row input[type="checkbox"] {
+  margin: 0;
+}
+
 /* DROPZONE */
 .np-dropzone {
+  position: center;
   border: 2px dashed #203d63;
   padding: 30px;
   text-align: center;
   border-radius: 10px;
   margin-bottom: 20px;
+  flex: 20 20 250px;
 }
 
 .np-upload-btn {
@@ -168,4 +225,15 @@ button {
 .custom-dropdown .btn {
   background-color: #149A85 !important;
   border: none;
+}
+.dp-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* optional spacing */
+}
+
+.dp-check-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
