@@ -7,6 +7,7 @@ const menuItems = [
   { to: "/day", label: "Dienos EEG signalai" },
   { to: "/night", label: "Nakties EEG signalai" },
   { to: "/settings", label: "Nustatymai" },
+  { to: "/account", label: "Paskyra" },
 ];
 
 function Header() {
