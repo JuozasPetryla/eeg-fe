@@ -5,6 +5,7 @@ import Footer from "./components/footer";
 import Night from "./pages/night";
 import Day from "./pages/day";
 import Home from "./pages/home";
+import Account from "./pages/account";
 //import Import from "./pages/import";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/night" element={<Night />} />
         <Route path="/day" element={<Day />} />
+        <Route path="/account" element={<Account />} />
       </Routes>
       <Footer />
     </BrowserRouter>
