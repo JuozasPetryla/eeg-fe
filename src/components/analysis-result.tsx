@@ -1,5 +1,8 @@
 import BrainTopoMap from './BrainTopoMap';
 
+import MLSleepResultView, { isMLSleepResult } from "./ml-sleep-result";
+
+
 type AnalysisMeta = {
   failas?: string;
   trukme_sek?: number;
@@ -174,6 +177,12 @@ export default function AnalysisResultView({
       </div>
     );
   }
+
+  if (isMLSleepResult(result)) {
+    return <MLSleepResultView result={result} visibleKeys={visibleKeys} />;
+  }
+
+
 
   // Handle Night Analysis (Mixed: Images + stage_stats)
   if (isObject(result)) {

@@ -6,9 +6,9 @@ import { apiRequest } from "../api/api";
 import "./style.css";
 
 const VIZ_OPTIONS = [
-  { id: "scatter", label: "Taškinė hipnograma" },
   { id: "classic", label: "Klasikinė hipnograma" },
   { id: "heatmap", label: "Heatmap" },
+  { id: "scatter", label: "Taškinė hipnograma" },
   { id: "stages", label: "Stadijų pasiskirstymas" },
   { id: "stage_stats", label: "Stadijų bangų analizė" },
 ];
