@@ -208,6 +208,17 @@ button {
   color: #203d63;
 }
 
+.np-power-cell {
+  min-width: 24ch;
+}
+
+.np-power-bar {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: #149A85;
+  letter-spacing: 0.02em;
+}
+
 .np-json {
   margin: 0;
   white-space: pre-wrap;

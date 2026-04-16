@@ -51,6 +51,14 @@ function formatNumber(value: number | undefined, digits = 2, scientificThreshold
   return value.toFixed(digits);
 }
 
+function buildPowerBar(value: number | undefined, width = 20) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "░".repeat(width);
+  }
+  const filled = Math.max(0, Math.min(width, Math.round((value / 100) * width)));
+  return `${"█".repeat(filled)}${"░".repeat(width - filled)}`;
+}
+
 /**
  * For a given band name (e.g. "Beta") and a list of selected arrow-labels
  * (e.g. ["Theta ↑", "Beta ↓"]), find the matching arrow indicator.
@@ -89,7 +97,7 @@ export default function AnalysisResultView({
       <div className="np-results">
         {/* Meta card */}
         <div className="np-card">
-          <h3>Analizės informacija</h3>
+          <h3>EEG signalu analize</h3>
           <div className="np-meta-grid">
             <div><strong>Failas</strong><p>{info.failas ?? "N/A"}</p></div>
             <div><strong>Trukmė</strong><p>{formatNumber(info.trukme_sek)} s</p></div>
@@ -99,17 +107,18 @@ export default function AnalysisResultView({
 
         {/* Band results table */}
         <div className="np-card">
-          <h3>Dažnių juostų rezultatai</h3>
+          <h3>Dazniu juostu metrikos</h3>
           <div className="np-table-wrap">
             <table className="np-table">
               <thead>
                 <tr>
                   <th>Juosta</th>
-                  <th>Galia</th>
-                  <th>Santykinė galia %</th>
-                  <th>Vid. amplitudė</th>
+                  <th>Galia (uV2)</th>
+                  <th>Santykinė %</th>
+                  <th>Juosta</th>
+                  <th>Vid. amp. (uV)</th>
                   <th>Nuokrypis</th>
-                  <th>Max amplitudė</th>
+                  <th>Max amp. (uV)</th>
                   {extraColumns.map((col) => (
                     <th key={col.title} className="np-table__extra-th">
                       {col.title}
@@ -122,7 +131,12 @@ export default function AnalysisResultView({
                   <tr key={band}>
                     <td>{band}</td>
                     <td>{formatNumber(metrics.galia, 4)}</td>
-                    <td>{formatNumber(metrics["santykine_galia_%"], 2)}</td>
+                    <td>{formatNumber(metrics["santykine_galia_%"], 2)} %</td>
+                    <td className="np-power-cell">
+                      <span className="np-power-bar">
+                        {buildPowerBar(metrics["santykine_galia_%"])}
+                      </span>
+                    </td>
                     <td>{formatNumber(metrics.vidurine_amplitude, 4)}</td>
                     <td>{formatNumber(metrics.nuokrypis, 4)}</td>
                     <td>{formatNumber(metrics.max_amplitude, 4, 1e-2)}</td>

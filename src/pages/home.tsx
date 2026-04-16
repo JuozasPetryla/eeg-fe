@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import "./home.css";
 
@@ -9,6 +9,7 @@ const features = [
     desc: "Miego stadijų analizė, hipnogramos ir lėtų bangų vizualizacija.",
     to: "/night",
     color: "#203d63",
+    analysisType: "night",
   },
   {
     icon: "☀️",
@@ -16,6 +17,7 @@ const features = [
     desc: "ADHD, depresijos, epilepsijos ir migrenos biomarkerių paieška.",
     to: "/day",
     color: "#149A85",
+    analysisType: "day",
   },
 ];
 
@@ -26,8 +28,85 @@ const stats = [
   { value: "4", label: "Ligos" },
 ];
 
+type HomeJob = {
+  id: number;
+  analysis_type: string;
+  status: string;
+  error_message?: string | null;
+  queued_at?: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  result_url: string;
+  file: {
+    original_filename: string;
+  };
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  queued: "Eilėje",
+  processing: "Vykdoma",
+  completed: "Baigta",
+  failed: "Klaida",
+};
+
+function formatStatus(status: string) {
+  return STATUS_LABELS[status] ?? status;
+}
+
+function formatJobTime(job: HomeJob) {
+  const timestamp = job.finished_at ?? job.started_at ?? job.queued_at;
+  if (!timestamp) return "Nėra laiko";
+
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "Nėra laiko";
+
+  return date.toLocaleString("lt-LT", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function HomePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [jobs, setJobs] = useState<HomeJob[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadJobs = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:8000/analysis-jobs?uploaded_by_user_id=1&limit=12"
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch jobs: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!cancelled) {
+          setJobs(Array.isArray(data.jobs) ? data.jobs : []);
+          setJobsLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setJobs([]);
+          setJobsLoading(false);
+        }
+      }
+    };
+
+    loadJobs();
+    const intervalId = window.setInterval(loadJobs, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   // Animuota EEG banga fone
   useEffect(() => {
@@ -127,14 +206,63 @@ export default function HomePage() {
       <section className="home-features">
         <h2 className="home-section-title">Analizės moduliai</h2>
         <div className="home-cards">
-          {features.map(f => (
-            <NavLink key={f.to} to={f.to} className="home-card" style={{ "--accent": f.color } as React.CSSProperties}>
+          {features.map(f => {
+            const moduleJobs = jobs.filter((job) => job.analysis_type === f.analysisType);
+            const activeJobs = moduleJobs.filter(
+              (job) => job.status === "queued" || job.status === "processing"
+            );
+            const recentJobs = moduleJobs.slice(0, 3);
+
+            return (
+            <div key={f.to} className="home-card" style={{ "--accent": f.color } as React.CSSProperties}>
               <div className="home-card-icon">{f.icon}</div>
               <h3 className="home-card-title">{f.title}</h3>
               <p className="home-card-desc">{f.desc}</p>
-              <span className="home-card-link">Atidaryti →</span>
-            </NavLink>
-          ))}
+              <div className="home-card-status">
+                <span className="home-card-status-count">
+                  {activeJobs.length} aktyv.
+                </span>
+                <span className="home-card-status-note">
+                  {jobsLoading ? "Atnaujinama..." : `${moduleJobs.length} naujausi įrašai`}
+                </span>
+              </div>
+              <div className="home-job-list">
+                {recentJobs.length === 0 ? (
+                  <div className="home-job-empty">
+                    {jobsLoading ? "Kraunami darbai..." : "Šiuo metu darbų nėra"}
+                  </div>
+                ) : (
+                  recentJobs.map((job) => (
+                    <div key={job.id} className="home-job-row">
+                      <div className="home-job-main">
+                        <span className="home-job-file">{job.file.original_filename}</span>
+                        <span className={`home-job-badge home-job-badge--${job.status}`}>
+                          {formatStatus(job.status)}
+                        </span>
+                      </div>
+                      <div className="home-job-meta">
+                        <span>#{job.id}</span>
+                        <span>{formatJobTime(job)}</span>
+                      </div>
+                      {job.status === "failed" && job.error_message ? (
+                        <div className="home-job-error">{job.error_message}</div>
+                      ) : null}
+                      <NavLink
+                        to={`${f.to}?jobId=${job.id}`}
+                        className="home-job-link"
+                      >
+                        Peržiūrėti darbą →
+                      </NavLink>
+                    </div>
+                  ))
+                )}
+              </div>
+              <NavLink to={f.to} className="home-card-link">
+                Atidaryti modulį →
+              </NavLink>
+            </div>
+            );
+          })}
         </div>
       </section>
 

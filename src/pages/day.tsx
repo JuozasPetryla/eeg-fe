@@ -1,26 +1,8 @@
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { useState } from "react";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import AnalysisResultView from "../components/analysis-result";
 import "./style.css";
-
-const checkboxBands: Record<string, string[]> = {
-  "adhd-re1": ["theta"],
-  "adhd-re2": ["beta"],
-  "adhd-re3": ["theta", "beta"],
-  "adhd-re4": ["alpha"],
-  "depresija-re1": ["alpha"],
-  "depresija-re2": ["theta"],
-  "depresija-re3": ["beta"],
-  "depresija-re4": ["delta"],
-  "epilepsija-re1": ["delta"],
-  "epilepsija-re2": ["gamma"],
-  "epilepsija-re3": ["beta"],
-  "epilepsija-re4": ["theta"],
-  "migrena-re1": ["alpha"],
-  "migrena-re2": ["delta"],
-  "migrena-re3": ["gamma"],
-  "migrena-re4": ["beta"],
-};
 const diseases = [
   { id: "adhd", label: "ADHD" },
   { id: "depresija", label: "Depresija" },
@@ -71,12 +53,14 @@ const all = [
 ];
 
 export default function DayPage() {
+  const [searchParams] = useSearchParams();
   const [files, setFiles]               = useState<File[]>([]);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
   const [result, setResult]             = useState<unknown>(null);
   const [analyzing, setAnalyzing]       = useState(false);
   const [error, setError]               = useState<string | null>(null);
+  const [activeJobId, setActiveJobId]   = useState<number | null>(null);
 
   const toggleChart = (id: string) => {
     setSelectedCharts(prev =>
@@ -90,10 +74,6 @@ export default function DayPage() {
     );
   };
 
-  const selectedBands = Array.from(
-    new Set(selectedCharts.flatMap((id) => checkboxBands[id] ?? []))
-  );
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
@@ -104,6 +84,70 @@ export default function DayPage() {
     setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
   };
 
+  useEffect(() => {
+    const jobIdParam = searchParams.get("jobId");
+    if (!jobIdParam) return;
+
+    const parsedJobId = Number(jobIdParam);
+    if (!Number.isInteger(parsedJobId) || parsedJobId <= 0) {
+      setError("Netinkamas darbo identifikatorius.");
+      return;
+    }
+
+    let cancelled = false;
+    let timeoutId: number | null = null;
+
+    const pollJob = async () => {
+      try {
+        setAnalyzing(true);
+        setError(null);
+        setActiveJobId(parsedJobId);
+
+        const statusRes = await fetch(`http://localhost:8000/analysis-jobs/${parsedJobId}/result`);
+        if (!statusRes.ok) {
+          throw new Error(`Failed to fetch analysis result: ${statusRes.status}`);
+        }
+
+        const statusData = await statusRes.json();
+        if (cancelled) return;
+
+        if (statusData.result && statusData.result.result_json) {
+          setResult(statusData.result.result_json);
+          setAnalyzing(false);
+          return;
+        }
+
+        if (statusData.job?.status === "failed") {
+          setError(statusData.job?.error_message ?? "Analizė nepavyko.");
+          setAnalyzing(false);
+          return;
+        }
+
+        if (statusData.job?.status === "completed" && !statusData.result) {
+          setError("Analizė baigta, bet rezultatai nebuvo rasti.");
+          setAnalyzing(false);
+          return;
+        }
+
+        timeoutId = window.setTimeout(pollJob, 2000);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Nepavyko gauti analizės rezultatų.");
+          setAnalyzing(false);
+        }
+      }
+    };
+
+    setResult(null);
+    pollJob();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [searchParams]);
 
   const startAnalysis = async () => {
     if (!files.length) return;
@@ -128,6 +172,7 @@ export default function DayPage() {
 
       const uploadData = await uploadRes.json();
       const jobId = uploadData.analysis_job.id;
+      setActiveJobId(jobId);
 
       console.log("File uploaded, job ID:", jobId);
 
@@ -234,16 +279,21 @@ export default function DayPage() {
       </svg>
     </div>
           <p>Analizuojamas EEG įrašas...</p>
+          {activeJobId !== null ? <p>Darbo ID: #{activeJobId}</p> : null}
         </div>
       )}
 
       {error && <p className="np-error">{error}</p>}
 
       {result !== null && (
-        <AnalysisResultView result={result} visibleBands={selectedBands} extraColumns={selectedDiseases.map(id => {
-          const disease = all.find(d => d.id === id);
-          return { title: disease!.title, items: disease!.data.map(d => d.label) };
-        })} />
+        <AnalysisResultView
+          result={result}
+          visibleBands={selectedCharts}
+          extraColumns={selectedDiseases.map(id => {
+            const disease = all.find(d => d.id === id);
+            return { title: disease!.title, items: disease!.data.map(d => d.label) };
+          })}
+        />
       )}
     </div>
     <div className="right">

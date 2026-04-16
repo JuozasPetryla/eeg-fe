@@ -190,14 +190,124 @@
   color: #6b7280;
   line-height: 1.6;
   margin: 0;
-  flex: 1;
+}
+
+.home-card-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.home-card-status-count {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1a2d45;
+}
+
+.home-card-status-note {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.home-job-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.home-job-row {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e5eaf1;
+}
+
+.home-job-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-job-file {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #1a2d45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-job-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  color: #6b7280;
+}
+
+.home-job-badge {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.home-job-badge--queued {
+  background: #eef3ff;
+  color: #3254a8;
+}
+
+.home-job-badge--processing {
+  background: #eefbf8;
+  color: #137664;
+}
+
+.home-job-badge--completed {
+  background: #edf8ee;
+  color: #2a7c39;
+}
+
+.home-job-badge--failed {
+  background: #fdebec;
+  color: #8a2432;
+}
+
+.home-job-error {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: #8a2432;
+}
+
+.home-job-empty {
+  padding: 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px dashed #d4dce7;
+  font-size: 0.84rem;
+  color: #6b7280;
 }
 
 .home-card-link {
+  display: inline-flex;
   font-size: 0.88rem;
   font-weight: 700;
   color: var(--accent);
   margin-top: 8px;
+  text-decoration: none;
+}
+
+.home-job-link {
+  display: inline-flex;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
 }
 
 /* ── HOW IT WORKS ────────────────────────────────────────────────────────── */

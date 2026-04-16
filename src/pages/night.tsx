@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import AnalysisResultView from "../components/analysis-result";
 import "./style.css";
 
@@ -10,6 +11,7 @@ const VIZ_OPTIONS = [
 ];
 
 export default function NightPage() {
+  const [searchParams] = useSearchParams();
   const [files, setFiles] = useState<File[]>([]);
   const [selectedVisualizations, setSelectedVisualizations] = useState<string[]>(
     VIZ_OPTIONS.map((opt) => opt.id)
@@ -17,6 +19,7 @@ export default function NightPage() {
   const [result, setResult] = useState<unknown>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeJobId, setActiveJobId] = useState<number | null>(null);
 
   const toggleVisualization = (id: string) => {
     setSelectedVisualizations((prev) =>
@@ -36,6 +39,71 @@ export default function NightPage() {
     const selected = Array.from(e.target.files);
     setFiles(prev => [...prev, ...selected]);
   };
+
+  useEffect(() => {
+    const jobIdParam = searchParams.get("jobId");
+    if (!jobIdParam) return;
+
+    const parsedJobId = Number(jobIdParam);
+    if (!Number.isInteger(parsedJobId) || parsedJobId <= 0) {
+      setError("Netinkamas darbo identifikatorius.");
+      return;
+    }
+
+    let cancelled = false;
+    let timeoutId: number | null = null;
+
+    const pollJob = async () => {
+      try {
+        setAnalyzing(true);
+        setError(null);
+        setActiveJobId(parsedJobId);
+
+        const statusRes = await fetch(`http://localhost:8000/analysis-jobs/${parsedJobId}/result`);
+        if (!statusRes.ok) {
+          throw new Error(`Failed to fetch analysis result: ${statusRes.status}`);
+        }
+
+        const statusData = await statusRes.json();
+        if (cancelled) return;
+
+        if (statusData.result && statusData.result.result_json) {
+          setResult(statusData.result.result_json);
+          setAnalyzing(false);
+          return;
+        }
+
+        if (statusData.job?.status === "failed") {
+          setError(statusData.job?.error_message ?? "Analizė nepavyko.");
+          setAnalyzing(false);
+          return;
+        }
+
+        if (statusData.job?.status === "completed" && !statusData.result) {
+          setError("Analizė baigta, bet rezultatai nebuvo rasti.");
+          setAnalyzing(false);
+          return;
+        }
+
+        timeoutId = window.setTimeout(pollJob, 2000);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Nepavyko gauti analizės rezultatų.");
+          setAnalyzing(false);
+        }
+      }
+    };
+
+    setResult(null);
+    pollJob();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [searchParams]);
 
   const startAnalysis = async () => {
     if (!files.length) return;
@@ -61,6 +129,7 @@ export default function NightPage() {
 
       const uploadData = await uploadRes.json();
       const jobId = uploadData.analysis_job.id;
+      setActiveJobId(jobId);
 
       console.log("File uploaded, job ID:", jobId);
 
@@ -160,6 +229,7 @@ export default function NightPage() {
       </svg>
     </div>
           <p>Analizuojamas miegas...</p>
+          {activeJobId !== null ? <p>Darbo ID: #{activeJobId}</p> : null}
         </div>
       )}
 
