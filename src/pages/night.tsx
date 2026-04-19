@@ -8,6 +8,7 @@ const VIZ_OPTIONS = [
   { id: "classic", label: "Klasikinė hipnograma" },
   { id: "heatmap", label: "Heatmap" },
   { id: "stages", label: "Stadijų pasiskirstymas" },
+  { id: "stage_stats", label: "Stadijų bangų analizė" },
 ];
 
 export default function NightPage() {

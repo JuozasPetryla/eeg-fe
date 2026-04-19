@@ -1,3 +1,5 @@
+import BrainTopoMap from './BrainTopoMap';
+
 type AnalysisMeta = {
   failas?: string;
   trukme_sek?: number;
@@ -15,6 +17,8 @@ type BandMetrics = {
 type StatisticalAnalysisResult = {
   informacija?: AnalysisMeta;
   rezultatai?: Record<string, BandMetrics>;
+  // Per-channel relative powers for the topographic scalp map
+  kanalu_galia?: Record<string, Record<string, number>>;
 };
 
 export type ExtraColumn = {
@@ -86,8 +90,9 @@ export default function AnalysisResultView({
   extraColumns?: ExtraColumn[];
 }) {
   if (isStatisticalAnalysisResult(result)) {
-    const info = result.informacija ?? {};
-    const bands = Object.entries(result.rezultatai ?? {}).filter(
+    const info   = result.informacija ?? {};
+    const kanalu = result.kanalu_galia;
+    const bands  = Object.entries(result.rezultatai ?? {}).filter(
       ([band]) =>
         !visibleBands || visibleBands.length === 0 ||
         visibleBands.includes(band.toLowerCase())
@@ -104,6 +109,18 @@ export default function AnalysisResultView({
             <div><strong>Diskretizacija</strong><p>{formatNumber(info.sfreq)} Hz</p></div>
           </div>
         </div>
+
+        {/* Topographic brain map */}
+        {kanalu && Object.keys(kanalu).length > 0 && (
+          <div className="np-card">
+            <h3>Smegenų aktyvumo topografinis žemėlapis</h3>
+            <p style={{ fontSize: 12, color: '#888', margin: '0 0 16px' }}>
+              Kiekvieno elektrodo nuokrypis nuo šio paciento erdvinio vidurkio (10–20 sistema).
+              Mėlyna = žemiau vidurkio, balta = vidurkis, raudona = aukščiau vidurkio. Spalva sočiausia ties ±2σ.
+            </p>
+            <BrainTopoMap channelData={kanalu} />
+          </div>
+        )}
 
         {/* Band results table */}
         <div className="np-card">
@@ -164,18 +181,70 @@ export default function AnalysisResultView({
     );
   }
 
-  if (isImageMap(result)) {
+  // Handle Night Analysis (Mixed: Images + stage_stats)
+  if (isObject(result)) {
+    const stageStats = result.stage_stats as Record<string, Record<string, BandMetrics>> | undefined;
     const entries = Object.entries(result).filter(
-      ([key]) => !visibleKeys || visibleKeys.length === 0 || visibleKeys.includes(key)
+      ([key]) => key !== "stage_stats" && (!visibleKeys || visibleKeys.length === 0 || visibleKeys.includes(key))
     );
+
     return (
       <div className="np-results">
         {entries.map(([key, value]) => (
-          <div key={key} className="np-card">
-            <h4>{key}</h4>
-            <img src={value} alt={key} />
-          </div>
+          typeof value === "string" && (
+            <div key={key} className="np-card">
+              <h4>{key.charAt(0).toUpperCase() + key.slice(1)}</h4>
+              <img src={value} alt={key} style={{ width: "100%" }} />
+            </div>
+          )
         ))}
+
+        {stageStats && (!visibleKeys || visibleKeys.includes("stage_stats")) && (
+          <div className="np-card">
+            <h3>Stadijų bangų analizė</h3>
+            {Object.entries(stageStats).map(([stage, bands]) => (
+              <div key={stage} style={{ marginBottom: "2rem" }}>
+                <h4>{stage}</h4>
+                <div className="np-table-wrap">
+                  <table className="np-table">
+                    <thead>
+                      <tr>
+                        <th>Juosta</th>
+                        <th>Galia (uV2)</th>
+                        <th>Santykinė %</th>
+                        <th>Vizualizacija</th>
+                        <th>Z-balas (Nuokrypis)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(bands).map(([band, m]) => (
+                        <tr key={band}>
+                          <td>{band}</td>
+                          <td>{formatNumber(m.galia, 4)}</td>
+                          <td>{formatNumber(m["santykine_galia_%"], 2)} %</td>
+                          <td className="np-power-cell">
+                            <span className="np-power-bar">
+                              {buildPowerBar(m["santykine_galia_%"])}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ 
+                              color: Math.abs(m.nuokrypis || 0) > 2 ? "#FF6347" : 
+                                     Math.abs(m.nuokrypis || 0) > 1 ? "#FFD700" : "inherit",
+                              fontWeight: Math.abs(m.nuokrypis || 0) > 1 ? "bold" : "normal"
+                            }}>
+                              {formatNumber(m.nuokrypis, 4)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
