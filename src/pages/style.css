@@ -233,6 +233,103 @@ button {
   color: #8a2432;
 }
 
+.np-batch {
+  margin-top: 24px;
+}
+
+.np-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.np-batch-row {
+  width: 100%;
+  text-align: left;
+  background: #f8fafc;
+  color: #203d63;
+  border: 1px solid #d8dee8;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.np-batch-row.active {
+  border-color: #149A85;
+  box-shadow: 0 0 0 2px rgba(20, 154, 133, 0.12);
+}
+
+.np-batch-row__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.np-batch-row__file {
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.np-batch-row__status {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.np-batch-row__status--completed {
+  color: #0d6e5e;
+}
+
+.np-batch-row__status--processing {
+  color: #203d63;
+}
+
+.np-batch-row__status--queued {
+  color: #7c5c00;
+}
+
+.np-batch-row__status--failed {
+  color: #8a2432;
+}
+
+.np-batch-progress {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.np-batch-progress__bar {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.np-batch-progress__bar--completed {
+  background: #149A85;
+}
+
+.np-batch-progress__bar--processing {
+  background: #203d63;
+}
+
+.np-batch-progress__bar--queued {
+  background: #caa64a;
+}
+
+.np-batch-progress__bar--failed {
+  background: #d14343;
+}
+
+.np-batch-row__error {
+  margin-top: 8px;
+  color: #8a2432;
+  font-size: 0.85rem;
+}
+
 .custom-dropdown .btn {
   background-color: #149A85 !important;
   border: none;

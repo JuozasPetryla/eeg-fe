@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
+
+import { apiFetch } from "../api/api";
 import "./home.css";
 
 const features = [
@@ -30,9 +32,16 @@ const stats = [
 
 type HomeJob = {
   id: number;
+  kind: "job" | "batch";
+  batch_id?: number | null;
   analysis_type: string;
   status: string;
   error_message?: string | null;
+  child_job_count?: number;
+  queued_child_count?: number;
+  processing_child_count?: number;
+  completed_child_count?: number;
+  failed_child_count?: number;
   queued_at?: string;
   started_at?: string | null;
   finished_at?: string | null;
@@ -47,6 +56,7 @@ const STATUS_LABELS: Record<string, string> = {
   processing: "Vykdoma",
   completed: "Baigta",
   failed: "Klaida",
+  partial_failed: "Dalinai nepavyko",
 };
 
 function formatStatus(status: string) {
@@ -68,6 +78,12 @@ function formatJobTime(job: HomeJob) {
   });
 }
 
+function jobRoute(job: HomeJob, basePath: string) {
+  return job.kind === "batch" || job.batch_id
+    ? `${basePath}?batchId=${job.batch_id ?? job.id}`
+    : `${basePath}?jobId=${job.id}`;
+}
+
 export default function HomePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [jobs, setJobs] = useState<HomeJob[]>([]);
@@ -78,15 +94,16 @@ export default function HomePage() {
 
     const loadJobs = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8000/analysis-jobs?uploaded_by_user_id=1&limit=12"
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch jobs: ${response.status}`);
+        let data: { jobs: HomeJob[] };
+        try {
+          data = await apiFetch<{ jobs: HomeJob[] }>(
+            "/analysis-jobs/?uploaded_by_user_id=1&grouped=true&limit=12"
+          );
+        } catch {
+          data = await apiFetch<{ jobs: HomeJob[] }>(
+            "/analysis-jobs/?uploaded_by_user_id=1&limit=12"
+          );
         }
-
-        const data = await response.json();
         if (!cancelled) {
           setJobs(Array.isArray(data.jobs) ? data.jobs : []);
           setJobsLoading(false);
@@ -211,6 +228,10 @@ export default function HomePage() {
             const activeJobs = moduleJobs.filter(
               (job) => job.status === "queued" || job.status === "processing"
             );
+            const activeJobCount = activeJobs.reduce(
+              (sum, job) => sum + (job.kind === "batch" ? (job.queued_child_count ?? 0) + (job.processing_child_count ?? 0) : 1),
+              0
+            );
             const recentJobs = moduleJobs.slice(0, 3);
 
             return (
@@ -220,7 +241,7 @@ export default function HomePage() {
               <p className="home-card-desc">{f.desc}</p>
               <div className="home-card-status">
                 <span className="home-card-status-count">
-                  {activeJobs.length} aktyv.
+                  {activeJobCount} aktyv.
                 </span>
                 <span className="home-card-status-note">
                   {jobsLoading ? "Atnaujinama..." : `${moduleJobs.length} naujausi įrašai`}
@@ -241,14 +262,22 @@ export default function HomePage() {
                         </span>
                       </div>
                       <div className="home-job-meta">
-                        <span>#{job.id}</span>
+                        <span>{job.kind === "batch" ? `Batch #${job.id}` : `#${job.id}`}</span>
                         <span>{formatJobTime(job)}</span>
                       </div>
+                      {job.kind === "batch" && job.child_job_count ? (
+                        <div className="home-job-meta">
+                          <span>{job.child_job_count} failai</span>
+                          <span>
+                            {job.completed_child_count ?? 0}/{job.child_job_count} baigta
+                          </span>
+                        </div>
+                      ) : null}
                       {job.status === "failed" && job.error_message ? (
                         <div className="home-job-error">{job.error_message}</div>
                       ) : null}
                       <NavLink
-                        to={`${f.to}?jobId=${job.id}`}
+                        to={jobRoute(job, f.to)}
                         className="home-job-link"
                       >
                         Peržiūrėti darbą →

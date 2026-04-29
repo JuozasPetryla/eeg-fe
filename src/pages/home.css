@@ -277,6 +277,11 @@
   color: #8a2432;
 }
 
+.home-job-badge--partial_failed {
+  background: #fff3e6;
+  color: #a35a00;
+}
+
 .home-job-error {
   margin-top: 8px;
   font-size: 0.76rem;

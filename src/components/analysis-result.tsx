@@ -34,12 +34,6 @@ function isStatisticalAnalysisResult(value: unknown): value is StatisticalAnalys
   return isObject(value) && "rezultatai" in value;
 }
 
-function isImageMap(value: unknown): value is Record<string, string> {
-  if (!isObject(value)) return false;
-  const entries = Object.entries(value);
-  return entries.length > 0 && entries.every(([, v]) => typeof v === "string");
-}
-
 function formatNumber(value: number | undefined, digits = 2, scientificThreshold?: number) {
   if (typeof value !== "number" || Number.isNaN(value)) return "N/A";
   const abs = Math.abs(value);

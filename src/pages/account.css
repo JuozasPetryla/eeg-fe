@@ -174,6 +174,11 @@
   font-family: inherit;
 }
 
+.ac-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .ac-btn--primary {
   background: #149A85;
   color: #ffffff;
@@ -356,6 +361,43 @@
   font-size: 0.72rem;
   font-weight: 600;
   color: #475569;
+}
+
+.ac-history-link {
+  color: #149A85;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ac-history-link:hover {
+  color: #10816f;
+  text-decoration: underline;
+}
+
+.ac-message {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: #1e3a5f;
+}
+
+.ac-message--muted {
+  color: #64748b;
+}
+
+.ac-message--success {
+  color: #0d6e5e;
+}
+
+.ac-message--error {
+  color: #b42318;
+}
+
+.ac-empty {
+  padding: 28px 24px;
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 700px) {
