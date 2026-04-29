@@ -6,6 +6,8 @@ import Night from "./pages/night";
 import Day from "./pages/day";
 import Home from "./pages/home";
 import Account from "./pages/account";
+import Register from "./pages/register";
+import Login from "./pages/login";
 //import Import from "./pages/import";
 
 export default function App() {
@@ -18,6 +20,8 @@ export default function App() {
         <Route path="/night" element={<Night />} />
         <Route path="/day" element={<Day />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
       <Footer />
     </BrowserRouter>

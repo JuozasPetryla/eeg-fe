@@ -1,228 +1,450 @@
-.np-page {
-  max-width: 900px;
-  margin: auto;
-  padding: 40px 20px;
-  font-family: sans-serif;
+/* ═══════════════════════════════════════════════════════
+   style.css — shared by DayPage and NightPage
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Base + background layers ────────────────────────── */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background-color: #f0f4f8;
+  /* Subtle dot grid */
+  background-image:
+    radial-gradient(circle, rgba(32,61,99,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  position: relative;
 }
 
+/* Wave layer 1 — bottom-left, navy */
+body::before {
+  content: "";
+  position: fixed;
+  bottom: -60px;
+  left: -40px;
+  width: 105vw;
+  height: 900px;
+  /* Two waves stacked in one pseudo-element */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath d='M0,160 C240,60 480,260 720,160 C960,60 1200,260 1440,160 L1440,320 L0,320Z' fill='rgba(32,61,99,0.06)'/%3E%3C/svg%3E") no-repeat bottom/cover,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath d='M0,220 C360,100 720,300 1080,180 C1260,120 1380,240 1440,220 L1440,320 L0,320Z' fill='rgba(32,61,99,0.035)'/%3E%3C/svg%3E") no-repeat bottom/cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Wave layer 3 — bottom-right, teal */
+body::after {
+  content: "";
+  position: fixed;
+  bottom: -30px;
+  right: -60px;
+  width: 105vw;
+  height: 500px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath d='M0,200 C300,80 600,300 900,160 C1100,60 1300,220 1440,200 L1440,320 L0,320Z' fill='rgba(20,154,133,0.055)'/%3E%3C/svg%3E") no-repeat bottom/cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Make sure page content sits above pseudo-elements */
+.np-page,
+.container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── NightPage wrapper ───────────────────────────────── */
+.np-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 36px 24px 60px;
+}
+
+/* ── DayPage three-column wrapper ────────────────────── */
 .container {
   display: flex;
-  gap: 20px;
+  gap: 0;
   align-items: flex-start;
-  max-width: auto;
-  margin-top: 3rem;
-  padding: 40px 20px;
-  font-family: sans-serif;
 }
 
-.left {
-  flex: 0 0 250px;
-  margin-right: 10rem;
+.left,
+.right {
+  flex: 0 0 210px;
+  background: rgba(255,255,255,0.85);
+  border-right: 1px solid #e2e8f0;
+  padding: 24px 14px;
+  backdrop-filter: blur(4px);
 }
 
 .right {
-  flex: 0 0 250px;
-  margin-left: 10rem;
+  border-right: none;
+  border-left: 1px solid #e2e8f0;
 }
 
-.np-page {
+/* center column */
+.container > .np-page {
   flex: 1;
-  padding: 40px 20px;
-  font-family: sans-serif;
+  border: none;
+  padding: 32px 28px 60px;
+  max-width: none;
 }
 
+/* ── Side panels (dp-panel) ──────────────────────────── */
 .dp-panel {
-  background: #149A85;
-  padding: 20px;
-  border-radius: 10px;
-  color: white;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
 }
 
 .dp-panel h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
+  margin: 0 0 14px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #94a3b8;
 }
 
+/* ── Checkboxes ──────────────────────────────────────── */
 .dp-check-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2px;
 }
 
 .dp-check-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
-.dp-check-row input[type="checkbox"] {
-  margin: 0;
-}
-
-/* DROPZONE */
-.np-dropzone {
-  position: center;
-  border: 2px dashed #203d63;
-  padding: 30px;
-  text-align: center;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  flex: 20 20 250px;
-}
-
-.np-upload-btn {
-  display: inline-block;
-  margin-top: 10px;
-  background: #203d63;
-  color: white;
-  padding: 8px 12px;
+  gap: 9px;
+  padding: 7px 8px;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 0.875rem;
+  color: #1e3a5f;
+  font-weight: 500;
+  transition: background 0.12s;
 }
 
-.np-upload-btn input {
-  display: none;
+.dp-check-row:hover { background: #f1f5f9; }
+
+.dp-check-row input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid #c8d5e3;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.12s, border-color 0.12s;
 }
 
-/* FILES */
-.np-files {
-  margin-top: 10px;
+.dp-check-row input[type="checkbox"]:checked {
+  background: #149A85;
+  border-color: #149A85;
+}
+
+.dp-check-row input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 5px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* ── Dropzone ────────────────────────────────────────── */
+.np-dropzone {
+  border: 1.5px dashed #c8d5e3;
+  border-radius: 10px;
+  padding: 28px 20px;
+  text-align: center;
+  margin-bottom: 14px;
+  background: rgba(255,255,255,0.9);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.np-dropzone:hover {
+  border-color: #149A85;
+  background: #f6fefe;
+}
+
+.np-dropzone p {
+  margin: 0 0 10px;
+  color: #64748b;
   font-size: 0.9rem;
 }
 
-/* OPTIONS */
-.np-options {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
+/* ── Upload button ───────────────────────────────────── */
+.np-upload-btn {
+  display: inline-block;
+  background: #149A85;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background 0.15s;
 }
 
-/* BUTTON */
+.np-upload-btn:hover { background: #10816f; }
+.np-upload-btn input { display: none; }
+
+/* ── File list ───────────────────────────────────────── */
+.np-files {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.np-files p {
+  margin: 4px 0;
+  background: #f1f5f9;
+  border-radius: 5px;
+  padding: 4px 10px;
+  display: inline-block;
+}
+
+/* ── Night viz options ───────────────────────────────── */
+.np-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.np-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #334155;
+  font-weight: 500;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.np-options label:hover {
+  border-color: #149A85;
+  background: #f6fefe;
+}
+
+.np-options input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #c8d5e3;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.np-options input[type="checkbox"]:checked {
+  background: #149A85;
+  border-color: #149A85;
+}
+
+.np-options input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0px;
+  width: 5px;
+  height: 7px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* ── Analyze button ──────────────────────────────────── */
 button {
-  padding: 10px 20px;
-  background: #203d63;
+  padding: 10px 24px;
+  background: #149A85;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 0.925rem;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s, opacity 0.15s;
 }
 
-/* LOADING */
+button:hover:not(:disabled) { background: #10816f; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Loading ─────────────────────────────────────────── */
 .np-loading {
   text-align: center;
-  margin-top: 30px;
+  margin-top: 28px;
   display: flex;
-  justify-content: center;
   flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #149A85;
+  font-weight: 500;
+  font-size: 0.9rem;
 }
+
+.np-loading p { margin: 0; }
+
 .sin-wave {
-  width: 50rem;
-  height: 3rem;
-  margin: auto;
+  width: 280px;
+  height: 48px;
   overflow: hidden;
 }
 
-.sin-wave svg {
-  width: 100%;
-  height: 100%;
-}
+.sin-wave svg { width: 100%; height: 100%; }
 
 .sin-wave path {
-  stroke: #203d63;
-  stroke-width: 5;
-  fill: transparent;
-  stroke-dasharray: 500;   
-  stroke-dashoffset: 1000;  
-  animation: drawInfinite 4s linear infinite;  
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  animation: drawInfinite 3s linear infinite;
 }
 
 @keyframes drawInfinite {
-  to {
-    stroke-dashoffset: 0;
-  }
+  to { stroke-dashoffset: 0; }
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #ddd;
-  border-top: 4px solid #203d63;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: auto;
+/* ── Error ───────────────────────────────────────────── */
+.np-error {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  color: #c53030;
+  font-size: 0.875rem;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* RESULTS */
+/* ── Results ─────────────────────────────────────────── */
 .np-results {
-  margin-top: 30px;
+  margin-top: 28px;
   display: grid;
-  gap: 20px;
-}
-
-.np-card {
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(32, 61, 99, 0.08);
-}
-
-.np-card img {
-  width: 100%;
-}
-
-.np-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
-.np-meta-grid p {
-  margin: 6px 0 0;
-  word-break: break-word;
+.np-card {
+  background: rgba(255,255,255,0.95);
+  padding: 20px 22px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(32,61,99,0.06);
 }
 
-.np-table-wrap {
-  overflow-x: auto;
+.np-card h3 {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e3a5f;
 }
+
+.np-card h4 {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.np-card img { width: 100%; border-radius: 6px; display: block; }
+
+.np-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.np-meta-grid strong {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.np-meta-grid p { margin: 0; font-size: 0.9rem; color: #1e3a5f; font-weight: 500; }
+
+/* ── Results table ───────────────────────────────────── */
+.np-table-wrap { overflow-x: auto; }
 
 .np-table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.np-table th,
-.np-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #d8dee8;
-  text-align: left;
-  white-space: nowrap;
+  font-size: 0.86rem;
 }
 
 .np-table th {
+  padding: 9px 12px;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: #203d63;
+  white-space: nowrap;
 }
 
-.np-power-cell {
-  min-width: 24ch;
+.np-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  white-space: nowrap;
 }
 
-.np-power-bar {
+.np-table tbody tr:last-child td { border-bottom: none; }
+.np-table tbody tr:hover { background: #f8fafc; }
+
+/* Extra disease columns */
+.np-table__extra-th {
+  background: #edfaf7;
+  color: #0d6e5e;
+  font-weight: 700;
+  border-left: 2px solid #9ae6d7;
+}
+
+.np-table__extra-td {
+  text-align: center;
+  border-left: 2px solid #f1f5f9;
+}
+
+.np-arrow {
   display: inline-block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: #149A85;
-  letter-spacing: 0.02em;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 6px;
 }
+
+.np-arrow--up   { color: #c53030; background: #fff5f5; }
+.np-arrow--down { color: #2b6cb0; background: #ebf8ff; }
+.np-arrow--none { color: #c8d5e3; font-weight: 400; }
 
 .np-json {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  font-size: 0.82rem;
+}
 }
 
 .np-error {
