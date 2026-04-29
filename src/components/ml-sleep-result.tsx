@@ -1,5 +1,7 @@
 import type { Data } from "plotly.js";
 import Plot from "react-plotly.js";
+import { useMemo, useEffect, useRef, useState } from "react";
+
 
 type BandMetrics = {
   galia?: number;
@@ -8,6 +10,7 @@ type BandMetrics = {
   nuokrypis?: number;
   max_amplitude?: number;
 };
+
 
 export interface MLSleepResult {
   type: "ml_sleep";
@@ -20,6 +23,7 @@ export interface MLSleepResult {
   stage_stats?: Record<string, Record<string, BandMetrics>>;
 }
 
+
 export function isMLSleepResult(result: unknown): result is MLSleepResult {
   return (
     typeof result === "object" &&
@@ -30,7 +34,7 @@ export function isMLSleepResult(result: unknown): result is MLSleepResult {
   );
 }
 
-// ── These keys must match what the night page passes in visibleKeys ─────────
+
 export const ML_SLEEP_PLOT_KEYS = {
   classic:      "classic",
   heatmap:      "heatmap",
@@ -38,6 +42,7 @@ export const ML_SLEEP_PLOT_KEYS = {
   distribution: "stages",
   eeg:          "eeg",
 } as const;
+
 
 const STAGE_NAMES: Record<number, string> = {
   0: "Budrumas",
@@ -47,6 +52,7 @@ const STAGE_NAMES: Record<number, string> = {
   4: "REM miegas",
 };
 
+
 const STAGE_COLORS: Record<string, string> = {
   "Budrumas":          "#FF6347",
   "Lengvas miegas N1": "#FFD700",
@@ -55,7 +61,9 @@ const STAGE_COLORS: Record<string, string> = {
   "REM miegas":        "#32CD32",
 };
 
+
 const STAGE_ORDER = Object.values(STAGE_NAMES);
+
 
 const sharedLayout = {
   paper_bgcolor: "transparent",
@@ -64,10 +72,11 @@ const sharedLayout = {
   margin: { t: 40, r: 20, b: 60, l: 160 },
 };
 
-// Helper — true if the plot should be shown
+
 function isVisible(key: string, visibleKeys?: string[]) {
-  return !visibleKeys || visibleKeys.length === 0 || visibleKeys.includes(key);
+  return visibleKeys === undefined || visibleKeys.includes(key);
 }
+
 
 function buildPowerBar(value: number | undefined, width = 20) {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -77,6 +86,53 @@ function buildPowerBar(value: number | undefined, width = 20) {
   return `${"█".repeat(filled)}${"░".repeat(width - filled)}`;
 }
 
+
+// ── Timed Plot wrapper ────────────────────────────────────────────────────────
+function TimedPlot({
+  name,
+  ...props
+}: React.ComponentProps<typeof Plot> & { name: string }) {
+  const startRef = useRef(performance.now());
+  const [ms, setMs] = useState<number | null>(null);
+
+  // Reset the clock every time the component re-renders (e.g. data change)
+  startRef.current = performance.now();
+
+  useEffect(() => {
+    const elapsed = parseFloat((performance.now() - startRef.current).toFixed(1));
+    setMs(elapsed);
+    console.log(`[Plot] "${name}" rendered in ${elapsed}ms`);
+  }); // no dep array → runs after every render, so re-render timing updates too
+
+  return (
+    <div style={{ position: "relative" }}>
+      <Plot {...props} />
+      {ms !== null && (
+        <span
+          title={`"${name}" render time`}
+          style={{
+            position:     "absolute",
+            top:          8,
+            right:        8,
+            background:   "rgba(0,0,0,0.55)",
+            color:        "#fff",
+            fontSize:     11,
+            fontFamily:   "monospace",
+            padding:      "2px 7px",
+            borderRadius: 4,
+            pointerEvents: "none",
+            userSelect:   "none",
+          }}
+        >
+          ⏱ {ms}ms
+        </span>
+      )}
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 export default function MLSleepResultView({
   result,
   visibleKeys,
@@ -85,74 +141,145 @@ export default function MLSleepResultView({
   visibleKeys?: string[];
 }) {
   const stageStats = result.stage_stats;
-  const classicTrace = {
-    x: result.time_hours,
-    y: result.stages.map((s) => 4 - s),
-    type: "scatter" as const,
-    mode: "lines" as const,
-    line: { shape: "hv" as const, color: "#203d63", width: 2 },
-    name: "Stadija",
-  };
 
-  const scatterTraces = Object.entries(STAGE_NAMES).map(([code, label]) => {
-    const indices = result.stages.reduce<number[]>((acc, s, i) => {
-      if (s === Number(code)) acc.push(i);
-      return acc;
-    }, []);
+  const showClassic = isVisible(ML_SLEEP_PLOT_KEYS.classic,      visibleKeys);
+  const showHeatmap = isVisible(ML_SLEEP_PLOT_KEYS.heatmap,      visibleKeys);
+  const showScatter = isVisible(ML_SLEEP_PLOT_KEYS.scatter,      visibleKeys);
+  const showDist    = isVisible(ML_SLEEP_PLOT_KEYS.distribution, visibleKeys);
+  const showEeg     = isVisible(ML_SLEEP_PLOT_KEYS.eeg,          visibleKeys);
+  const showStats   = !!stageStats && isVisible("stage_stats",   visibleKeys);
+
+  const classicTrace = useMemo(() => {
+    if (!showClassic) return null;
     return {
-      x: indices.map((i) => result.time_hours[i]),
-      y: indices.map(() => label),
+      x: result.time_hours,
+      y: result.stages.map((s) => 4 - s),
+      type: "scatter" as const,
+      mode: "lines" as const,
+      line: { shape: "hv" as const, color: "#203d63", width: 2 },
+      name: "Stadija",
+    };
+  }, [showClassic, result.time_hours, result.stages]);
+
+  const heatmapTraces = useMemo(() => {
+    if (!showHeatmap) return null;
+    const heatmapTrace = {
+      z: [result.stages],
+      x: result.time_hours,
+      type: "heatmap" as const,
+      colorscale: Object.keys(STAGE_NAMES).map((code, i) => [
+        i / (Object.keys(STAGE_NAMES).length - 1),
+        STAGE_COLORS[STAGE_NAMES[Number(code)]],
+      ]) as [number, string][],
+      zmin: 0,
+      zmax: 4,
+      showscale: false,
+      hovertemplate: "%{text}<extra></extra>",
+      text: [result.stages.map((s) => STAGE_NAMES[s])],
+    };
+    const legendTraces = Object.entries(STAGE_NAMES).map(([, label]) => ({
+      x: [null as unknown as number],
+      y: [null as unknown as number],
       type: "scatter" as const,
       mode: "markers" as const,
-      marker: { color: STAGE_COLORS[label], size: 6 },
+      marker: { color: STAGE_COLORS[label], size: 12, symbol: "square" as const },
       name: label,
+      showlegend: true,
+    }));
+    return [heatmapTrace, ...legendTraces];
+  }, [showHeatmap, result.stages, result.time_hours]);
+
+  const scatterTraces = useMemo(() => {
+    if (!showScatter) return null;
+    return Object.entries(STAGE_NAMES).map(([code, label]) => {
+      const indices = result.stages.reduce<number[]>((acc, s, i) => {
+        if (s === Number(code)) acc.push(i);
+        return acc;
+      }, []);
+      return {
+        x: indices.map((i) => result.time_hours[i]),
+        y: indices.map(() => label),
+        type: "scatter" as const,
+        mode: "markers" as const,
+        marker: { color: STAGE_COLORS[label], size: 6 },
+        name: label,
+      };
+    });
+  }, [showScatter, result.stages, result.time_hours]);
+
+  const distTrace = useMemo(() => {
+    if (!showDist) return null;
+    const distLabels = Object.values(STAGE_NAMES);
+    const distValues = Object.keys(STAGE_NAMES).map(
+      (code) => result.stage_percentages[Number(code)] ?? 0
+    );
+    return {
+      x: distLabels,
+      y: distValues,
+      type: "bar" as const,
+      marker: { color: distLabels.map((l) => STAGE_COLORS[l]) },
+      name: "Pasiskirstymas",
     };
-  });
+  }, [showDist, result.stage_percentages]);
 
-  const heatmapTrace = {
-    z: [result.stages],
-    x: result.time_hours,
-    type: "heatmap" as const,
-    colorscale: Object.keys(STAGE_NAMES).map((code, i) => [
-      i / (Object.keys(STAGE_NAMES).length - 1),
-      STAGE_COLORS[STAGE_NAMES[Number(code)]],
-    ]) as [number, string][],
-    zmin: 0,
-    zmax: 4,
-    showscale: false,
-    hovertemplate: "%{text}<extra></extra>",
-    text: [result.stages.map((s) => STAGE_NAMES[s])],
-  };
+  const eegTraces = useMemo(() => {
+    if (!showEeg) return null;
+    return [
+      {
+        x: result.time_hours,
+        y: result.eeg_fpz,
+        type: "scatter",
+        mode: "lines",
+        line: { color: "#4a90d9", width: 1 },
+        name: result.eeg_ch_names[0],
+        yaxis: "y",
+      },
+      {
+        x: result.time_hours,
+        y: result.eeg_pf,
+        type: "scatter",
+        mode: "lines",
+        line: { color: "#e8a838", width: 1 },
+        name: result.eeg_ch_names[1],
+        yaxis: "y2",
+      },
+      {
+        z: [result.stages],
+        x: result.time_hours,
+        type: "heatmap",
+        colorscale: Object.keys(STAGE_NAMES).map((code, i) => [
+          i / (Object.keys(STAGE_NAMES).length - 1),
+          STAGE_COLORS[STAGE_NAMES[Number(code)]],
+        ]) as [number, string][],
+        zmin: 0,
+        zmax: 4,
+        showscale: false,
+        yaxis: "y3",
+        text: result.stages.map((s) => STAGE_NAMES[s]) as unknown as string[][],
+        hovertemplate: "%{text}<extra></extra>",
+      },
+      ...Object.entries(STAGE_NAMES).map(([, label]) => ({
+        x: [null],
+        y: [null],
+        type: "scatter",
+        mode: "markers",
+        marker: { color: STAGE_COLORS[label], size: 12, symbol: "square" },
+        name: label,
+        yaxis: "y3",
+        showlegend: true,
+      })),
+    ] as Data[];
+  }, [showEeg, result.time_hours, result.eeg_fpz, result.eeg_pf, result.stages, result.eeg_ch_names]);
 
-  const heatmapLegendTraces = Object.entries(STAGE_NAMES).map(([, label]) => ({
-    x: [null as unknown as number],
-    y: [null as unknown as number],
-    type: "scatter" as const,
-    mode: "markers" as const,
-    marker: { color: STAGE_COLORS[label], size: 12, symbol: "square" as const },
-    name: label,
-    showlegend: true,
-  }));
-
-  const distLabels = Object.values(STAGE_NAMES);
-  const distValues = Object.keys(STAGE_NAMES).map(
-    (code) => result.stage_percentages[Number(code)] ?? 0
-  );
-  const distTrace = {
-    x: distLabels,
-    y: distValues,
-    type: "bar" as const,
-    marker: { color: distLabels.map((l) => STAGE_COLORS[l]) },
-    name: "Pasiskirstymas",
-  };
 
   return (
     <div className="np-results">
 
-      {isVisible(ML_SLEEP_PLOT_KEYS.classic, visibleKeys) && (
+      {showClassic && classicTrace && (
         <div className="np-card">
           <h3>Klasikinė hipnograma</h3>
-          <Plot
+          <TimedPlot
+            name="Klasikinė hipnograma"
             data={[classicTrace]}
             layout={{
               ...sharedLayout,
@@ -170,36 +297,38 @@ export default function MLSleepResultView({
         </div>
       )}
 
-        {isVisible(ML_SLEEP_PLOT_KEYS.heatmap, visibleKeys) && (
+      {showHeatmap && heatmapTraces && (
         <div className="np-card">
-            <h3>Hipnograma (heatmap)</h3>
-            <Plot
-            data={[heatmapTrace, ...heatmapLegendTraces]}
+          <h3>Hipnograma (heatmap)</h3>
+          <TimedPlot
+            name="Hipnograma (heatmap)"
+            data={heatmapTraces}
             layout={{
-                ...sharedLayout,
-                xaxis: { color: "#333" },
-                yaxis: { visible: false },
-                legend: {
+              ...sharedLayout,
+              xaxis: { color: "#333" },
+              yaxis: { visible: false },
+              legend: {
                 orientation: "h",
                 x: 0,
                 y: -0.3,
                 font: { size: 11, color: "#333" },
-                },
-                margin: { t: 10, r: 20, b: 80, l: 20 },
+              },
+              margin: { t: 10, r: 20, b: 80, l: 20 },
             }}
             style={{ width: "100%", height: 180 }}
             useResizeHandler
-            />
-            <p style={{ textAlign: "center", color: "#333", fontSize: "13px", marginTop: "-66px", marginBottom: "40px", position: "relative", zIndex: 10 }}>
+          />
+          <p style={{ textAlign: "center", color: "#333", fontSize: "13px", marginTop: "-66px", marginBottom: "40px", position: "relative", zIndex: 10 }}>
             Laikas (valandos)
-            </p>
+          </p>
         </div>
-        )}
+      )}
 
-      {isVisible(ML_SLEEP_PLOT_KEYS.scatter, visibleKeys) && (
+      {showScatter && scatterTraces && (
         <div className="np-card">
           <h3>Hipnograma (taškai)</h3>
-          <Plot
+          <TimedPlot
+            name="Hipnograma (taškai)"
             data={scatterTraces}
             layout={{
               ...sharedLayout,
@@ -213,10 +342,11 @@ export default function MLSleepResultView({
         </div>
       )}
 
-      {isVisible(ML_SLEEP_PLOT_KEYS.distribution, visibleKeys) && (
+      {showDist && distTrace && (
         <div className="np-card">
           <h3>Stadijų pasiskirstymas</h3>
-          <Plot
+          <TimedPlot
+            name="Stadijų pasiskirstymas"
             data={[distTrace]}
             layout={{
               ...sharedLayout,
@@ -231,55 +361,12 @@ export default function MLSleepResultView({
         </div>
       )}
 
-      {isVisible(ML_SLEEP_PLOT_KEYS.eeg, visibleKeys) && (
+      {showEeg && eegTraces && (
         <div className="np-card">
           <h3>EEG su miego stadijomis</h3>
-          <Plot
-            data={[
-              {
-                x: result.time_hours,
-                y: result.eeg_fpz,
-                type: "scatter",
-                mode: "lines",
-                line: { color: "#4a90d9", width: 1 },
-                name: result.eeg_ch_names[0],
-                yaxis: "y",
-              },
-              {
-                x: result.time_hours,
-                y: result.eeg_pf,
-                type: "scatter",
-                mode: "lines",
-                line: { color: "#e8a838", width: 1 },
-                name: result.eeg_ch_names[1],
-                yaxis: "y2",
-              },
-              {
-                z: [result.stages],
-                x: result.time_hours,
-                type: "heatmap",
-                colorscale: Object.keys(STAGE_NAMES).map((code, i) => [
-                  i / (Object.keys(STAGE_NAMES).length - 1),
-                  STAGE_COLORS[STAGE_NAMES[Number(code)]],
-                ]) as [number, string][],
-                zmin: 0,
-                zmax: 4,
-                showscale: false,
-                yaxis: "y3",
-                text: result.stages.map((s) => STAGE_NAMES[s]) as unknown as string[][],
-                hovertemplate: "%{text}<extra></extra>",
-              },
-              ...Object.entries(STAGE_NAMES).map(([, label]) => ({
-                x: [null],
-                y: [null],
-                type: "scatter",
-                mode: "markers",
-                marker: { color: STAGE_COLORS[label], size: 12, symbol: "square" },
-                name: label,
-                yaxis: "y3",
-                showlegend: true,
-              })),
-            ] as Data[]}
+          <TimedPlot
+            name="EEG su miego stadijomis"
+            data={eegTraces}
             layout={{
               paper_bgcolor: "transparent",
               plot_bgcolor: "transparent",
@@ -298,10 +385,10 @@ export default function MLSleepResultView({
         </div>
       )}
 
-      {stageStats && (!visibleKeys || visibleKeys.includes("stage_stats")) && (
+      {showStats && (
         <div className="np-card">
           <h3>Stadijų bangų analizė</h3>
-          {Object.entries(stageStats).map(([stage, bands]) => (
+          {Object.entries(stageStats!).map(([stage, bands]) => (
             <div key={stage} style={{ marginBottom: "2rem" }}>
               <h4>{stage}</h4>
               <div className="np-table-wrap">
@@ -327,8 +414,8 @@ export default function MLSleepResultView({
                           </span>
                         </td>
                         <td>
-                          <span style={{ 
-                            color: Math.abs(m.nuokrypis || 0) > 2 ? "#FF6347" : 
+                          <span style={{
+                            color: Math.abs(m.nuokrypis || 0) > 2 ? "#FF6347" :
                                    Math.abs(m.nuokrypis || 0) > 1 ? "#FFD700" : "inherit",
                             fontWeight: Math.abs(m.nuokrypis || 0) > 1 ? "bold" : "normal"
                           }}>
