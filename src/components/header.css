@@ -1,10 +1,10 @@
-/* Navbar */
+/* ── Navbar ─────────────────────────────────────────── */
 .custom-navbar {
   background-color: #203d63;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 6rem;
+  height: 5.45rem;
   padding: 0;
   position: sticky;
   top: 0;
@@ -12,7 +12,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-/* Brand */
+/* ── Brand ───────────────────────────────────────────── */
 .navbar-brand {
   display: flex;
   align-items: center;
@@ -20,22 +20,51 @@
 }
 
 .logo {
-  height: 4.5rem;
-  margin-left: 2rem;
+  height: 4rem;
+  margin-left: 1rem;
   object-fit: contain;
-  margin-bottom: 2rem;
 }
 
-.brand-text {
-  color: #ffffff;
-  font-size: 2rem;
-  font-weight: 600;
-  margin-left: 0.5rem;
-  letter-spacing: -0.02em;
-  line-height: 1;
+/* ── Right side group ────────────────────────────────── */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 1rem;
 }
 
-/* Hamburger toggle */
+/* ── Logout button (navbar) ──────────────────────────── */
+.logout-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 7px;
+  padding: 5px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.logout-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  /* invert to make it white on dark navbar */
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
+}
+
+.logout-btn:hover .logout-icon {
+  opacity: 1;
+}
+
+/* ── Hamburger toggle ────────────────────────────────── */
 .btn.sidebar-toggle {
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.6);
@@ -45,8 +74,6 @@
   padding: 0.3rem 0.55rem;
   border-radius: 5px;
   cursor: pointer;
-  margin-right: 1rem;
-  margin-bottom: 2rem;
   transition: background 0.18s, border-color 0.18s;
 }
 
@@ -55,14 +82,10 @@
   border-color: rgba(255, 255, 255, 0.9);
 }
 
-.btn.sidebar-toggle:active {
-  background: rgba(255, 255, 255, 0.28);
-}
-
-/* Sidebar */
+/* ── Sidebar ─────────────────────────────────────────── */
 .sidebar {
   position: fixed;
-  top: 5.45rem;        /* sits flush below navbar */
+  top: 5.45rem;
   left: -260px;
   width: 250px;
   height: calc(100% - 5.45rem);
@@ -72,17 +95,20 @@
   z-index: 1000;
   overflow-y: auto;
   box-shadow: 3px 0 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar.open {
   left: 0;
 }
 
-/* Sidebar list */
+/* ── Sidebar list ────────────────────────────────────── */
 .sidebar-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
 }
 
 .sidebar-list li {
@@ -111,7 +137,44 @@
   font-weight: 600;
 }
 
-/* Overlay */
+/* ── Sidebar logout button ───────────────────────────── */
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px;
+  padding: 10px 14px;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  width: calc(100% - 16px);
+  text-align: left;
+}
+
+.sidebar-logout:hover {
+  background: #fff5f5;
+  color: #c53030;
+  border-color: #feb2b2;
+}
+
+.logout-icon--dark {
+  /* Keep original color inside sidebar (dark icon on light bg) */
+  filter: none;
+  opacity: 0.5;
+}
+
+.sidebar-logout:hover .logout-icon--dark {
+  filter: none;
+  opacity: 0.8;
+}
+
+/* ── Overlay ─────────────────────────────────────────── */
 .overlay {
   position: fixed;
   inset: 0;
@@ -121,3 +184,7 @@
   animation: fadeIn 0.18s ease;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
