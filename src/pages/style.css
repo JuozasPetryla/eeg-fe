@@ -445,7 +445,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   word-break: break-word;
   font-size: 0.82rem;
 }
-}
+
 
 .np-error {
   margin-top: 20px;
