@@ -10,6 +10,7 @@ const VIZ_OPTIONS = [
   { id: "heatmap", label: "Heatmap" },
   { id: "scatter", label: "Taškinė hipnograma" },
   { id: "stages", label: "Stadijų pasiskirstymas" },
+  { id: "eeg", label: "EEG su miego stadijomis" },
   { id: "stage_stats", label: "Stadijų bangų analizė" },
 ];
 

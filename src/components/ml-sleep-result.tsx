@@ -1,6 +1,14 @@
 import type { Data } from "plotly.js";
 import Plot from "react-plotly.js";
 
+type BandMetrics = {
+  galia?: number;
+  "santykine_galia_%"?: number;
+  vidurine_amplitude?: number;
+  nuokrypis?: number;
+  max_amplitude?: number;
+};
+
 export interface MLSleepResult {
   type: "ml_sleep";
   time_hours: number[];
@@ -9,6 +17,7 @@ export interface MLSleepResult {
   eeg_fpz: number[];
   eeg_pf: number[];
   eeg_ch_names: [string, string];
+  stage_stats?: Record<string, Record<string, BandMetrics>>;
 }
 
 export function isMLSleepResult(result: unknown): result is MLSleepResult {
@@ -60,6 +69,14 @@ function isVisible(key: string, visibleKeys?: string[]) {
   return !visibleKeys || visibleKeys.length === 0 || visibleKeys.includes(key);
 }
 
+function buildPowerBar(value: number | undefined, width = 20) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "░".repeat(width);
+  }
+  const filled = Math.max(0, Math.min(width, Math.round((value / 100) * width)));
+  return `${"█".repeat(filled)}${"░".repeat(width - filled)}`;
+}
+
 export default function MLSleepResultView({
   result,
   visibleKeys,
@@ -67,6 +84,7 @@ export default function MLSleepResultView({
   result: MLSleepResult;
   visibleKeys?: string[];
 }) {
+  const stageStats = result.stage_stats;
   const classicTrace = {
     x: result.time_hours,
     y: result.stages.map((s) => 4 - s),
@@ -277,6 +295,53 @@ export default function MLSleepResultView({
             style={{ width: "100%", height: 550 }}
             useResizeHandler
           />
+        </div>
+      )}
+
+      {stageStats && (!visibleKeys || visibleKeys.includes("stage_stats")) && (
+        <div className="np-card">
+          <h3>Stadijų bangų analizė</h3>
+          {Object.entries(stageStats).map(([stage, bands]) => (
+            <div key={stage} style={{ marginBottom: "2rem" }}>
+              <h4>{stage}</h4>
+              <div className="np-table-wrap">
+                <table className="np-table">
+                  <thead>
+                    <tr>
+                      <th>Juosta</th>
+                      <th>Galia (uV2)</th>
+                      <th>Santykinė %</th>
+                      <th>Vizualizacija</th>
+                      <th>Z-balas (Nuokrypis)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(bands).map(([band, m]) => (
+                      <tr key={band}>
+                        <td>{band}</td>
+                        <td>{typeof m.galia === "number" ? m.galia.toFixed(4) : "N/A"}</td>
+                        <td>{typeof m["santykine_galia_%"] === "number" ? m["santykine_galia_%"].toFixed(2) : "N/A"} %</td>
+                        <td className="np-power-cell">
+                          <span className="np-power-bar">
+                            {typeof m["santykine_galia_%"] === "number" ? buildPowerBar(m["santykine_galia_%"], 20) : "░".repeat(20)}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ 
+                            color: Math.abs(m.nuokrypis || 0) > 2 ? "#FF6347" : 
+                                   Math.abs(m.nuokrypis || 0) > 1 ? "#FFD700" : "inherit",
+                            fontWeight: Math.abs(m.nuokrypis || 0) > 1 ? "bold" : "normal"
+                          }}>
+                            {typeof m.nuokrypis === "number" ? m.nuokrypis.toFixed(4) : "N/A"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
