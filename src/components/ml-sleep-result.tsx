@@ -175,7 +175,7 @@ export default function MLSleepResultView({
       zmax: 4,
       showscale: false,
       hovertemplate: "%{text}<extra></extra>",
-      text: [result.stages.map((s) => STAGE_NAMES[s])],
+      text: result.stages.map((s) => STAGE_NAMES[s]),
     };
     const legendTraces = Object.entries(STAGE_NAMES).map(([, label]) => ({
       x: [null as unknown as number],
@@ -371,7 +371,7 @@ export default function MLSleepResultView({
               paper_bgcolor: "transparent",
               plot_bgcolor: "transparent",
               font: { color: "#333" },
-              grid: { rows: 3, columns: 1, subplots: [["xy"], ["xy2"], ["xy3"]] },
+              grid: { rows: 3, columns: 1, subplots: ["xy", "xy2", "xy3"] },
               xaxis:  { title: { text: "Laikas (valandos)" }, color: "#333" },
               yaxis:  { title: { text: `${result.eeg_ch_names[0]} (µV)` }, color: "#333", domain: [0.55, 1] },
               yaxis2: { title: { text: `${result.eeg_ch_names[1]} (µV)` }, color: "#333", domain: [0.1, 0.55] },
