@@ -396,7 +396,7 @@ export default function MLSleepResultView({
                   <thead>
                     <tr>
                       <th>Juosta</th>
-                      <th>Galia (uV2)</th>
+                      <th>Galia <span className="np-unit">(µV²)</span></th>
                       <th>Santykinė %</th>
                       <th>Vizualizacija</th>
                       <th>Z-balas (Nuokrypis)</th>

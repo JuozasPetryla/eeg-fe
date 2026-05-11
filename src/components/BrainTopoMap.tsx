@@ -91,12 +91,43 @@ const CTR  = SIZE / 2;
 const R    = SIZE * 0.385;
 
 // ─── Component ────────────────────────────────────────────────────────────────
+export type ChannelBandTimeseries = {
+  times_sec: number[];
+  channels: Record<string, Record<string, number[]>>;
+};
+
 interface BrainTopoMapProps {
   channelData: Record<string, Record<string, number>>;
+  channelTimeseries?: ChannelBandTimeseries;
 }
 
-export default function BrainTopoMap({ channelData }: BrainTopoMapProps) {
+type HoverState = {
+  name: string;
+  v: number;
+  cssX: number;
+  cssY: number;
+};
+
+// Build an SVG polyline path string from a series, fitted into a small box.
+function buildSparklinePath(series: number[], w: number, h: number): string {
+  if (!series.length) return "";
+  const min = Math.min(...series);
+  const max = Math.max(...series);
+  const range = max - min || 1;
+  const step = series.length > 1 ? w / (series.length - 1) : w;
+  return series
+    .map((v, i) => {
+      const x = i * step;
+      const y = h - ((v - min) / range) * h;
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
+export default function BrainTopoMap({ channelData, channelTimeseries }: BrainTopoMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<HoverState | null>(null);
 
   const bands = useMemo(() => {
     const first = Object.values(channelData)[0];
@@ -110,6 +141,17 @@ export default function BrainTopoMap({ channelData }: BrainTopoMapProps) {
   useEffect(() => {
     if (!bands.includes(selectedBand)) setSelectedBand(bands[0]);
   }, [bands, selectedBand]);
+
+  // Map normalized electrode name → raw key used in channelTimeseries
+  const timeseriesKeyMap = useMemo(() => {
+    const m = new Map<string, string>();
+    if (channelTimeseries?.channels) {
+      for (const key of Object.keys(channelTimeseries.channels)) {
+        m.set(normalizeName(key), key);
+      }
+    }
+    return m;
+  }, [channelTimeseries]);
 
   const electrodes = useMemo(() => {
     const out: Array<{ name: string; x: number; y: number; v: number }> = [];
@@ -338,18 +380,108 @@ export default function BrainTopoMap({ channelData }: BrainTopoMapProps) {
       </div>
 
       {/* ── Canvas wrapper ─────────────────────────────────────────────────── */}
-      <div style={{
-        borderRadius: '50%',
-        overflow:     'hidden',
-        boxShadow:    '0 4px 24px rgba(20,40,80,0.13), 0 1px 4px rgba(20,40,80,0.08)',
-        lineHeight:   0,
-      }}>
+      <div
+        ref={wrapperRef}
+        style={{
+          position:     'relative',
+          borderRadius: '50%',
+          boxShadow:    '0 4px 24px rgba(20,40,80,0.13), 0 1px 4px rgba(20,40,80,0.08)',
+          lineHeight:   0,
+        }}
+      >
         <canvas
           ref={canvasRef}
           width={SIZE}
           height={SIZE}
-          style={{ maxWidth: '100%', display: 'block' }}
+          style={{ maxWidth: '100%', display: 'block', borderRadius: '50%', cursor: 'crosshair' }}
+          onMouseMove={(e) => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = SIZE / rect.width;
+            const scaleY = SIZE / rect.height;
+            const px = (e.clientX - rect.left) * scaleX;
+            const py = (e.clientY - rect.top) * scaleY;
+
+            let best: { e: typeof electrodes[number]; d: number } | null = null;
+            for (const el of electrodes) {
+              const ex = CTR + el.x * R;
+              const ey = CTR - el.y * R;
+              const d = Math.hypot(px - ex, py - ey);
+              if (best === null || d < best.d) best = { e: el, d };
+            }
+
+            const HIT_PX = 18;
+            if (best && best.d <= HIT_PX) {
+              setHover({
+                name: best.e.name,
+                v: best.e.v,
+                cssX: e.clientX - rect.left,
+                cssY: e.clientY - rect.top,
+              });
+            } else {
+              setHover(null);
+            }
+          }}
+          onMouseLeave={() => setHover(null)}
         />
+        {hover && (() => {
+          const tsKey = timeseriesKeyMap.get(hover.name);
+          const series: number[] =
+            (tsKey ? channelTimeseries?.channels?.[tsKey]?.[selectedBand] : undefined) ?? [];
+          const SPARK_W = 156;
+          const SPARK_H = 36;
+          const path = buildSparklinePath(series, SPARK_W, SPARK_H);
+          const sparkColor = BAND_COLOR[selectedBand] ?? '#149A85';
+          const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+          const maxX = (wrapperRect?.width ?? 400) - 188;
+          const x = Math.min(hover.cssX, maxX);
+          const y = hover.cssY;
+          return (
+            <div
+              className="np-electrode-tooltip"
+              style={{ left: x, top: y }}
+            >
+              <div className="np-electrode-tooltip__head">
+                <span
+                  className="np-electrode-tooltip__value"
+                  style={{ color: sparkColor }}
+                >
+                  {hover.v.toFixed(1)} %
+                </span>
+                <span className="np-electrode-tooltip__band">
+                  {selectedBand}
+                  {BAND_HZ[selectedBand] ? ` · ${BAND_HZ[selectedBand]}` : ''}
+                </span>
+              </div>
+              {series.length > 1 ? (
+                <svg
+                  className="np-electrode-tooltip__sparkline"
+                  viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d={`${path} L${SPARK_W},${SPARK_H} L0,${SPARK_H} Z`}
+                    fill={sparkColor}
+                    fillOpacity={0.15}
+                  />
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke={sparkColor}
+                    strokeWidth={1.4}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              ) : (
+                <div className="np-electrode-tooltip__sparkline-empty">
+                  laiko duomenys nepasiekiami
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Colorbar ───────────────────────────────────────────────────────── */}

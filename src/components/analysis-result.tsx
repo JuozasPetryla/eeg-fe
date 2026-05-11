@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import BrainTopoMap from './BrainTopoMap';
+import SpectrogramView, { type SpectrogramData } from './SpectrogramView';
+import BandTimeseriesView, { type BandTimeseries } from './BandTimeseriesView';
 
 import MLSleepResultView, { isMLSleepResult } from "./ml-sleep-result";
 
@@ -17,11 +20,19 @@ type BandMetrics = {
   max_amplitude?: number;
 };
 
+type ChannelBandTimeseries = {
+  times_sec: number[];
+  channels: Record<string, Record<string, number[]>>;
+};
+
 type StatisticalAnalysisResult = {
   informacija?: AnalysisMeta;
   rezultatai?: Record<string, BandMetrics>;
   // Per-channel relative powers for the topographic scalp map
   kanalu_galia?: Record<string, Record<string, number>>;
+  spektrograma?: SpectrogramData;
+  juostu_dinamika?: BandTimeseries;
+  kanalu_dinamika?: ChannelBandTimeseries;
 };
 
 export type ExtraColumn = {
@@ -87,94 +98,12 @@ export default function AnalysisResultView({
   extraColumns?: ExtraColumn[];
 }) {
   if (isStatisticalAnalysisResult(result)) {
-    const info   = result.informacija ?? {};
-    const kanalu = result.kanalu_galia;
-    const bands  = Object.entries(result.rezultatai ?? {}).filter(
-      ([band]) =>
-        !visibleBands || visibleBands.length === 0 ||
-        visibleBands.includes(band.toLowerCase())
-    );
-
     return (
-      <div className="np-results">
-        {/* Meta card */}
-        <div className="np-card">
-          <h3>EEG signalu analize</h3>
-          <div className="np-meta-grid">
-            <div><strong>Failas</strong><p>{info.failas ?? "N/A"}</p></div>
-            <div><strong>Trukmė</strong><p>{formatNumber(info.trukme_sek)} s</p></div>
-            <div><strong>Diskretizacija</strong><p>{formatNumber(info.sfreq)} Hz</p></div>
-          </div>
-        </div>
-
-        {/* Topographic brain map */}
-        {kanalu && Object.keys(kanalu).length > 0 && (
-          <div className="np-card">
-            <h3>Smegenų aktyvumo topografinis žemėlapis</h3>
-            <p style={{ fontSize: 12, color: '#888', margin: '0 0 16px' }}>
-              Kiekvieno elektrodo nuokrypis nuo šio paciento erdvinio vidurkio (10–20 sistema).
-              Mėlyna = žemiau vidurkio, balta = vidurkis, raudona = aukščiau vidurkio. Spalva sočiausia ties ±2σ.
-            </p>
-            <BrainTopoMap channelData={kanalu} />
-          </div>
-        )}
-
-        {/* Band results table */}
-        <div className="np-card">
-          <h3>Dazniu juostu metrikos</h3>
-          <div className="np-table-wrap">
-            <table className="np-table">
-              <thead>
-                <tr>
-                  <th>Juosta</th>
-                  <th>Galia (uV2)</th>
-                  <th>Santykinė %</th>
-                  <th>Juosta</th>
-                  <th>Vid. amp. (uV)</th>
-                  <th>Nuokrypis</th>
-                  <th>Max amp. (uV)</th>
-                  {extraColumns.map((col) => (
-                    <th key={col.title} className="np-table__extra-th">
-                      {col.title}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {bands.map(([band, metrics]) => (
-                  <tr key={band}>
-                    <td>{band}</td>
-                    <td>{formatNumber(metrics.galia, 4)}</td>
-                    <td>{formatNumber(metrics["santykine_galia_%"], 2)} %</td>
-                    <td className="np-power-cell">
-                      <span className="np-power-bar">
-                        {buildPowerBar(metrics["santykine_galia_%"])}
-                      </span>
-                    </td>
-                    <td>{formatNumber(metrics.vidurine_amplitude, 4)}</td>
-                    <td>{formatNumber(metrics.nuokrypis, 4)}</td>
-                    <td>{formatNumber(metrics.max_amplitude, 4, 1e-2)}</td>
-                    {extraColumns.map((col) => {
-                      const arrow = getArrow(band, col.items);
-                      return (
-                        <td key={col.title} className="np-table__extra-td">
-                          {arrow !== "—" ? (
-                            <span className={`np-arrow np-arrow--${arrow === "↑" ? "up" : "down"}`}>
-                              {arrow}
-                            </span>
-                          ) : (
-                            <span className="np-arrow np-arrow--none">—</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <StatisticalAnalysisView
+        result={result}
+        visibleBands={visibleBands}
+        extraColumns={extraColumns}
+      />
     );
   }
 
@@ -213,7 +142,7 @@ export default function AnalysisResultView({
                     <thead>
                       <tr>
                         <th>Juosta</th>
-                        <th>Galia (uV2)</th>
+                        <th>Galia <span className="np-unit">(µV²)</span></th>
                         <th>Santykinė %</th>
                         <th>Vizualizacija</th>
                         <th>Z-balas (Nuokrypis)</th>
@@ -257,6 +186,189 @@ export default function AnalysisResultView({
       <div className="np-card">
         <h3>Gauti rezultatai</h3>
         <pre className="np-json">{JSON.stringify(result, null, 2)}</pre>
+      </div>
+    </div>
+  );
+}
+
+function StatisticalAnalysisView({
+  result,
+  visibleBands,
+  extraColumns,
+}: {
+  result: StatisticalAnalysisResult;
+  visibleBands?: string[];
+  extraColumns: ExtraColumn[];
+}) {
+  const info = result.informacija ?? {};
+  const kanalu = result.kanalu_galia;
+  const bands = Object.entries(result.rezultatai ?? {}).filter(
+    ([band]) =>
+      !visibleBands ||
+      visibleBands.length === 0 ||
+      visibleBands.includes(band.toLowerCase()),
+  );
+
+  const [expandedBand, setExpandedBand] = useState<string | null>(null);
+  const dynamics = result.juostu_dinamika;
+  const canDrillBand =
+    dynamics && Array.isArray(dynamics.times_sec) && dynamics.times_sec.length > 1;
+
+  return (
+    <div className="np-results">
+      {/* Meta card */}
+      <div className="np-card">
+        <h3>EEG signalu analize</h3>
+        <div className="np-meta-grid">
+          <div>
+            <strong>Failas</strong>
+            <p>{info.failas ?? "N/A"}</p>
+          </div>
+          <div>
+            <strong>Trukmė</strong>
+            <p>{formatNumber(info.trukme_sek)} s</p>
+          </div>
+          <div>
+            <strong>Diskretizacija</strong>
+            <p>{formatNumber(info.sfreq)} Hz</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Spectrogram — bird's-eye view of full recording */}
+      {result.spektrograma && result.spektrograma.times_sec?.length > 0 && (
+        <div className="np-card">
+          <h3>Spektrograma</h3>
+          <p className="np-card__sub">
+            Laiko ir dažnio žemėlapis — šilta spalva žymi didesnę galią (dB). Skirta
+            iš karto pamatyti anomalijas (pvz., epilepsinę iškrovą) per visą įrašą.
+          </p>
+          <SpectrogramView data={result.spektrograma} />
+        </div>
+      )}
+
+      {/* Topographic brain map */}
+      {kanalu && Object.keys(kanalu).length > 0 && (
+        <div className="np-card">
+          <h3>Smegenų aktyvumo topografinis žemėlapis</h3>
+          <p className="np-card__sub">
+            Kiekvieno elektrodo nuokrypis nuo šio paciento erdvinio vidurkio (10–20
+            sistema). Mėlyna = žemiau vidurkio, balta = vidurkis, raudona = aukščiau
+            vidurkio. Spalva sočiausia ties ±2σ.
+          </p>
+          <BrainTopoMap
+            channelData={kanalu}
+            channelTimeseries={result.kanalu_dinamika}
+          />
+        </div>
+      )}
+
+      {/* Band results table */}
+      <div className="np-card">
+        <h3>Dazniu juostu metrikos</h3>
+        {canDrillBand && (
+          <p className="np-card__sub">
+            Spustelėkite eilutę, kad pamatytumėte tos juostos galios kitimą laike.
+          </p>
+        )}
+        <div className="np-table-wrap">
+          <table className="np-table np-table--clickable">
+            <thead>
+              <tr>
+                <th>Juosta</th>
+                <th>Galia <span className="np-unit">(µV²)</span></th>
+                <th>Santykinė %</th>
+                <th>Juosta</th>
+                <th>Vid. amp. <span className="np-unit">(µV)</span></th>
+                <th>Nuokrypis</th>
+                <th>Max amp. <span className="np-unit">(µV)</span></th>
+                {extraColumns.map((col) => (
+                  <th key={col.title} className="np-table__extra-th">
+                    {col.title}
+                  </th>
+                ))}
+                {canDrillBand && <th className="np-table__drill-th" aria-label="" />}
+              </tr>
+            </thead>
+            <tbody>
+              {bands.map(([band, metrics]) => {
+                const isActive = expandedBand === band;
+                return (
+                  <tr
+                    key={band}
+                    className={
+                      isActive ? "np-table__row np-table__row--active" : "np-table__row"
+                    }
+                    onClick={
+                      canDrillBand
+                        ? () => setExpandedBand(isActive ? null : band)
+                        : undefined
+                    }
+                    style={canDrillBand ? { cursor: "pointer" } : undefined}
+                  >
+                    <td>{band}</td>
+                    <td>{formatNumber(metrics.galia, 4)}</td>
+                    <td>{formatNumber(metrics["santykine_galia_%"], 2)} %</td>
+                    <td className="np-power-cell">
+                      <span className="np-power-bar">
+                        {buildPowerBar(metrics["santykine_galia_%"])}
+                      </span>
+                    </td>
+                    <td>{formatNumber(metrics.vidurine_amplitude, 4)}</td>
+                    <td>{formatNumber(metrics.nuokrypis, 4)}</td>
+                    <td>{formatNumber(metrics.max_amplitude, 4, 1e-2)}</td>
+                    {extraColumns.map((col) => {
+                      const arrow = getArrow(band, col.items);
+                      return (
+                        <td key={col.title} className="np-table__extra-td">
+                          {arrow !== "—" ? (
+                            <span
+                              className={`np-arrow np-arrow--${arrow === "↑" ? "up" : "down"}`}
+                            >
+                              {arrow}
+                            </span>
+                          ) : (
+                            <span className="np-arrow np-arrow--none">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    {canDrillBand && (
+                      <td className="np-table__drill-td">
+                        <span
+                          className={`np-table__drill-icon${isActive ? " np-table__drill-icon--open" : ""}`}
+                          aria-hidden
+                        >
+                          ▾
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {canDrillBand && expandedBand && (
+          <div className="np-band-detail">
+            <div className="np-band-detail__header">
+              <span className="np-band-detail__title">
+                {expandedBand}{" "}
+                <span className="np-band-detail__sub">galios kitimas per įrašą</span>
+              </span>
+              <button
+                type="button"
+                className="np-band-detail__close"
+                onClick={() => setExpandedBand(null)}
+                aria-label="Uždaryti"
+              >
+                ×
+              </button>
+            </div>
+            <BandTimeseriesView band={expandedBand} data={dynamics!} />
+          </div>
+        )}
       </div>
     </div>
   );

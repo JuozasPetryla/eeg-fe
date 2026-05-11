@@ -435,9 +435,239 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   padding: 1px 6px;
 }
 
+/* Unit suffixes like µV² inside uppercased headers — keep original case
+   so micro sign (U+00B5) doesn't get uppercased into Greek Capital Mu. */
+.np-table th .np-unit { text-transform: none; letter-spacing: 0; }
+
 .np-arrow--up   { color: #c53030; background: #fff5f5; }
 .np-arrow--down { color: #2b6cb0; background: #ebf8ff; }
 .np-arrow--none { color: #c8d5e3; font-weight: 400; }
+
+/* ── Card sub-text ───────────────────────────────────── */
+.np-card__sub {
+  margin: -6px 0 14px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #7a8499;
+}
+
+/* ── Spectrogram legend ──────────────────────────────── */
+.np-spectrogram__legend {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.np-spectrogram__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.np-spectrogram__chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.np-spectrogram__hint {
+  margin-left: auto;
+  font-style: italic;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* ── Clickable table rows (drill-down) ───────────────── */
+.np-table--clickable tbody .np-table__row {
+  transition: background 0.15s ease;
+}
+
+.np-table--clickable tbody .np-table__row--active {
+  background: rgba(20, 154, 133, 0.08);
+  box-shadow: inset 3px 0 0 #149A85;
+}
+
+.np-table--clickable tbody .np-table__row--active:hover {
+  background: rgba(20, 154, 133, 0.12);
+}
+
+.np-table__drill-th,
+.np-table__drill-td {
+  width: 28px;
+  text-align: center;
+  padding-right: 14px;
+}
+
+.np-table__drill-icon {
+  display: inline-block;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.np-table__row:hover .np-table__drill-icon {
+  color: #94a3b8;
+}
+
+.np-table__drill-icon--open {
+  color: #149A85 !important;
+  transform: rotate(180deg);
+}
+
+/* ── Band drill-down detail panel ────────────────────── */
+.np-band-detail {
+  margin-top: 16px;
+  padding: 14px 16px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  animation: np-band-detail-in 0.22s ease;
+}
+
+@keyframes np-band-detail-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.np-band-detail__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.np-band-detail__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  letter-spacing: 0.01em;
+}
+
+.np-band-detail__sub {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
+.np-band-detail__close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.np-band-detail__close:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.np-band-detail__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.np-band-detail__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.np-band-detail__legend-line {
+  display: inline-block;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.np-band-detail__legend-line--dot {
+  background: transparent !important;
+  border-top: 2px dotted rgba(245, 158, 11, 0.8);
+  height: 0;
+}
+
+.np-band-detail__legend-line--dash {
+  background: transparent !important;
+  border-top: 2px dashed rgba(239, 68, 68, 0.8);
+  height: 0;
+}
+
+.np-band-detail__legend-hint {
+  margin-left: auto;
+  font-style: italic;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* ── Electrode hover tooltip ─────────────────────────── */
+.np-electrode-tooltip {
+  position: absolute;
+  z-index: 50;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(20, 40, 80, 0.16),
+              0 2px 6px rgba(20, 40, 80, 0.08);
+  padding: 10px 12px 8px;
+  min-width: 160px;
+  transform: translate(12px, 12px);
+}
+
+.np-electrode-tooltip__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.np-electrode-tooltip__value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.np-electrode-tooltip__band {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.np-electrode-tooltip__sparkline {
+  width: 100%;
+  height: 36px;
+  display: block;
+}
+
+.np-electrode-tooltip__sparkline-empty {
+  font-size: 0.7rem;
+  color: #cbd5e1;
+  text-align: center;
+  padding: 4px 0;
+}
 
 .np-json {
   margin: 0;
