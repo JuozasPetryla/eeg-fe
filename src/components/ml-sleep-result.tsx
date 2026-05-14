@@ -9,10 +9,95 @@ function subtractMean(signal: number[]): number[] {
   return signal.map(v => v - mean);
 }
 
-function processEEGSignal(
-  signal: number[]
-): number[] {
-  return subtractMean(signal);
+type BiquadCoeffs = { b: [number, number, number]; a: [number, number, number] };
+
+function butterworthLowpass(fc: number, fs: number): BiquadCoeffs {
+  const w0 = (2 * Math.PI * fc) / fs;
+  const cosW0 = Math.cos(w0);
+  const sinW0 = Math.sin(w0);
+  const alpha = sinW0 / (2 * Math.SQRT1_2);
+  const a0 = 1 + alpha;
+  return {
+    b: [(1 - cosW0) / 2 / a0, (1 - cosW0) / a0, (1 - cosW0) / 2 / a0],
+    a: [1, (-2 * cosW0) / a0, (1 - alpha) / a0],
+  };
+}
+
+function butterworthHighpass(fc: number, fs: number): BiquadCoeffs {
+  const w0 = (2 * Math.PI * fc) / fs;
+  const cosW0 = Math.cos(w0);
+  const sinW0 = Math.sin(w0);
+  const alpha = sinW0 / (2 * Math.SQRT1_2);
+  const a0 = 1 + alpha;
+  return {
+    b: [(1 + cosW0) / 2 / a0, (-(1 + cosW0)) / a0, (1 + cosW0) / 2 / a0],
+    a: [1, (-2 * cosW0) / a0, (1 - alpha) / a0],
+  };
+}
+
+function applyBiquad(signal: number[], { b, a }: BiquadCoeffs): number[] {
+  const out = new Array<number>(signal.length);
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let i = 0; i < signal.length; i++) {
+    const x0 = signal[i];
+    const y0 = b[0] * x0 + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2;
+    out[i] = y0;
+    x2 = x1; x1 = x0;
+    y2 = y1; y1 = y0;
+  }
+  return out;
+}
+
+// Zero-phase filtering: forward then backward → doubles effective order, no phase shift.
+function filtfilt(signal: number[], coeffs: BiquadCoeffs): number[] {
+  const forward = applyBiquad(signal, coeffs);
+  forward.reverse();
+  const backward = applyBiquad(forward, coeffs);
+  backward.reverse();
+  return backward;
+}
+
+function bandpassFilter(signal: number[], fs: number, lowHz: number, highHz: number): number[] {
+  // Need fs strictly above 2 × highHz for a meaningful band; otherwise return as-is.
+  if (!Number.isFinite(fs) || fs <= 2 * highHz || signal.length < 8) return signal;
+  const hp = butterworthHighpass(lowHz, fs);
+  const lp = butterworthLowpass(highHz, fs);
+  return filtfilt(filtfilt(signal, hp), lp);
+}
+
+function estimateSampleRateHz(timeHours: number[]): number {
+  if (timeHours.length < 2) return 0;
+  const totalSeconds = (timeHours[timeHours.length - 1] - timeHours[0]) * 3600;
+  if (totalSeconds <= 0) return 0;
+  return (timeHours.length - 1) / totalSeconds;
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = Float64Array.from(values).sort();
+  const mid = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+// Clip amplitude spikes using a robust σ estimate (MAD). Works on epoch-rate
+// data where frequency filtering can't run, and is safe when bandpass already
+// removed the wideband noise.
+function clipOutliersMAD(signal: number[], k = 6): number[] {
+  if (signal.length === 0) return signal;
+  const med = median(signal);
+  const absDev = new Array<number>(signal.length);
+  for (let i = 0; i < signal.length; i++) absDev[i] = Math.abs(signal[i] - med);
+  const robustSigma = 1.4826 * median(absDev);
+  if (robustSigma === 0) return signal;
+  const lo = med - k * robustSigma;
+  const hi = med + k * robustSigma;
+  return signal.map(v => (v < lo ? lo : v > hi ? hi : v));
+}
+
+function processEEGSignal(signal: number[], fs: number, lowHz = 1, highHz = 45): number[] {
+  const centered = subtractMean(signal);
+  const filtered = bandpassFilter(centered, fs, lowHz, highHz);
+  return clipOutliersMAD(filtered, 8);
 }
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -239,9 +324,16 @@ export default function MLSleepResultView({
   const eegTraces = useMemo(() => {
     if (!showEeg) return null;
     
-    // Process EEG signals: subtract mean
-    const fpzProcessed = processEEGSignal(result.eeg_fpz);
-    const pfProcessed = processEEGSignal(result.eeg_pf);
+    // Process EEG signals: subtract mean + 1–45 Hz bandpass (zero-phase) when fs allows
+    const fs = estimateSampleRateHz(result.time_hours);
+    const willFilter = Number.isFinite(fs) && fs > 90; // need > 2 × 45 Hz
+    console.log(
+      `[EEG] samples=${result.eeg_fpz.length}, fs≈${fs.toFixed(2)} Hz, bandpass=${
+        willFilter ? "1–45 Hz" : "skipped (fs too low)"
+      }`
+    );
+    const fpzProcessed = processEEGSignal(result.eeg_fpz, fs);
+    const pfProcessed = processEEGSignal(result.eeg_pf, fs);
     
     return [
       {
