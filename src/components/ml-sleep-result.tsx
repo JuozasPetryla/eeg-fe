@@ -2,6 +2,20 @@ import type { Data } from "plotly.js";
 import Plot from "react-plotly.js";
 import { useMemo, useEffect, useRef, useState } from "react";
 
+// ── Signal Processing Utilities ───────────────────────────────────────────────
+function subtractMean(signal: number[]): number[] {
+  if (signal.length === 0) return signal;
+  const mean = signal.reduce((a, b) => a + b, 0) / signal.length;
+  return signal.map(v => v - mean);
+}
+
+function processEEGSignal(
+  signal: number[]
+): number[] {
+  return subtractMean(signal);
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 
 type BandMetrics = {
   galia?: number;
@@ -224,10 +238,15 @@ export default function MLSleepResultView({
 
   const eegTraces = useMemo(() => {
     if (!showEeg) return null;
+    
+    // Process EEG signals: subtract mean
+    const fpzProcessed = processEEGSignal(result.eeg_fpz);
+    const pfProcessed = processEEGSignal(result.eeg_pf);
+    
     return [
       {
         x: result.time_hours,
-        y: result.eeg_fpz,
+        y: fpzProcessed,
         type: "scatter",
         mode: "lines",
         line: { color: "#4a90d9", width: 1 },
@@ -236,7 +255,7 @@ export default function MLSleepResultView({
       },
       {
         x: result.time_hours,
-        y: result.eeg_pf,
+        y: pfProcessed,
         type: "scatter",
         mode: "lines",
         line: { color: "#e8a838", width: 1 },
