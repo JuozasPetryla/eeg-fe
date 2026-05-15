@@ -119,6 +119,7 @@ export default function DayPage() {
   const [activeBatchId, setActiveBatchId] = useState<number | null>(null);
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
   const [selectedBatchJobId, setSelectedBatchJobId] = useState<number | null>(null);
+  const [isWarningOpen, setIsWarningOpen] = useState(false);
 
   const toggleChart = (id: string) => {
     setSelectedCharts((prev) =>
@@ -339,6 +340,12 @@ export default function DayPage() {
             ))}
           </div>
         </aside>
+
+        <button className="warning-trigger" type="button" onClick={() => setIsWarningOpen(true)}>
+          <span className="icon">⚠️</span>
+          <span className="text">Svarbi klinikinė informacija</span>
+          <span className="arrow">→</span>
+        </button>
       </div>
 
       <div className="np-page">
@@ -440,18 +447,42 @@ export default function DayPage() {
           <h3>Pasirinkite ligas:</h3>
           <div className="dp-check-list">
             {diseases.map((disease) => (
-              <label key={disease.id} className="dp-check-row">
-                <input
-                  type="checkbox"
-                  checked={selectedDiseases.includes(disease.id)}
-                  onChange={() => toggleDisease(disease.id)}
-                />
-                {disease.label}
-              </label>
+            <label key={disease.id} className="dp-check-row">
+              <input
+                type="checkbox"
+                checked={selectedDiseases.includes(disease.id)}
+                onChange={() => toggleDisease(disease.id)}
+              />
+              {disease.label}
+            </label>
             ))}
           </div>
         </aside>
       </div>
+
+      {isWarningOpen && (
+        <div className="modal-overlay" onClick={() => setIsWarningOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setIsWarningOpen(false)}>&times;</button>
+            <aside className="dp-panel dp-panel--warning">
+              <h3>⚠️ Teisinis ir klinikinis atsakomybės ribojimas</h3>
+              <div className="warning-scroll-area">
+                <p>
+                  Ši platforma teikia automatizuotą elektroencefalografijos (EEG) duomenų apdorojimą ir analizę, kuri yra skirta išskirtinai <strong>papildomai klinikinei informacijai gauti</strong>. Sistemos sugeneruoti rezultatai bei vizualizacijos negali būti traktuojami kaip galutinė medicininė diagnozė ar išvada. Galutinę klinikinę interpretaciją ir sprendimus dėl paciento gydymo taktikos privalo priimti kvalifikuotas gydytojas specialistas, įvertinęs visą turimą klinikinį kontekstą, anamnezę bei kitus diagnostinius tyrimus.
+                </p>
+                <p>
+                  Pažymime, kad kompiuterinės analizės tikslumas tiesiogiai priklauso nuo pateiktų duomenų kokybės. Rezultatų paklaidos gali atsirasti dėl registracijos metu kilusių artefaktų (raumenų įtampos, akių judesių, techninių trikdžių), netinkamo elektrodų impedanso ar algoritmų metodinių ribotumų. Pastebėjus neatitikimų tarp sistemos skaičiavimų ir vizualinės EEG analizės duomenų, rekomenduojama remtis klinikine patirtimi ir standartizuotais vertinimo protokolais.
+                </p>
+                <p>
+                  Normatyvinių nuokrypių (Z-balų) skaičiavimai remiasi standartizuotomis EEG duomenų bazėmis, tačiau privalo būti vertinami kritiškai, atsižvelgiant į individualią smegenų bioelektrinio aktyvumo variaciją, įrašymo kondicijas bei galimą medikamentų poveikį. Kilus abejonėms dėl duomenų patikimumo, būtina atlikti pakartotinį tyrimą arba pasikonsultuoti su kolegomis specialistais.
+                </p>
+              </div>
+              <button className="confirm-btn" onClick={() => setIsWarningOpen(false)}>Supratau</button>
+            </aside>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

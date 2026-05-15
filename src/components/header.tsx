@@ -7,7 +7,6 @@ import logoutIcon from "../assets/icons8-login-50.png";
 const menuItems = [
   { to: "/day",      label: "Dienos EEG signalai"  },
   { to: "/night",    label: "Nakties EEG signalai"  },
-  { to: "/settings", label: "Nustatymai"            },
   { to: "/account",  label: "Paskyra"               },
 ];
 

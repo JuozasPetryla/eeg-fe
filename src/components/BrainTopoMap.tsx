@@ -434,13 +434,15 @@ export default function BrainTopoMap({ channelData, channelTimeseries }: BrainTo
           const path = buildSparklinePath(series, SPARK_W, SPARK_H);
           const sparkColor = BAND_COLOR[selectedBand] ?? '#149A85';
           const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-          const maxX = (wrapperRect?.width ?? 400) - 188;
-          const x = Math.min(hover.cssX, maxX);
-          const y = hover.cssY;
+          const tooltipWidth = Math.min((wrapperRect?.width ?? 400) - 24, 280);
+          const maxX = Math.max(0, (wrapperRect?.width ?? 400) - tooltipWidth - 12);
+          const maxY = Math.max(0, (wrapperRect?.height ?? 400) - 140);
+          const x = Math.min(Math.max(0, hover.cssX), maxX);
+          const y = Math.min(Math.max(8, hover.cssY), maxY);
           return (
             <div
               className="np-electrode-tooltip"
-              style={{ left: x, top: y }}
+              style={{ left: x, top: y, width: tooltipWidth }}
             >
               <div className="np-electrode-tooltip__head">
                 <span
