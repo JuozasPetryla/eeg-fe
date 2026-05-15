@@ -8,6 +8,9 @@ import Home from "./pages/home";
 import Account from "./pages/account";
 import Register from "./pages/register";
 import Login from "./pages/login";
+import HelpPage from "./components/footer/helpcenter";
+import PrivacyPage from "./components/footer/privacypolicy";
+import TermsPage from "./components/footer/terms";
 //import Import from "./pages/import";
 
 export default function App() {
@@ -22,6 +25,9 @@ export default function App() {
         <Route path="/account" element={<Account />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/help" element={<HelpPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Routes>
       <Footer />
     </BrowserRouter>

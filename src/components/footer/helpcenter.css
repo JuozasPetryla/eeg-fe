@@ -1,0 +1,215 @@
+/* help.css */
+
+:root {
+  --primary-blue: #203d63;
+  --primary-teal: #149A85;
+  --bg-light: #f8fafc;
+  --text-muted: #64748b;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.help-center {
+  background-color: #ffffff;
+  color: #1e293b;
+}
+
+/* Paieškos sekcija */
+.help-search-container {
+  margin: 2.5rem auto 0;
+  width: 100%;
+  max-width: 650px;
+  position: relative;
+  z-index: 10;
+}
+
+.help-search-input {
+  width: 100%;
+  padding: 1.25rem 2rem;
+  padding-left: 3.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(32, 61, 99, 0.1);
+  font-size: 1.1rem;
+  color: var(--primary-blue);
+  background: white;
+  box-shadow: 0 15px 35px rgba(32, 61, 99, 0.08);
+  transition: var(--transition);
+}
+
+.help-search-input:focus {
+  outline: none;
+  border-color: var(--primary-teal);
+  box-shadow: 0 15px 40px rgba(20, 154, 133, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Search Icon Placeholder (jei naudosite svg ar pseudo-elementą) */
+.help-search-container::before {
+  content: "🔍";
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  opacity: 0.5;
+}
+
+/* FAQ Sekcija */
+.faq-container {
+  max-width: 900px;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+}
+
+.faq-item {
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: var(--transition);
+}
+
+.faq-item:hover {
+  border-color: rgba(20, 154, 133, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.02);
+}
+
+.faq-question {
+  width: 100%;
+  text-align: left;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--primary-blue);
+  font-size: 1.1rem;
+}
+
+.faq-answer {
+  padding: 0 1.5rem 1.5rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.02);
+  margin-top: -0.5rem;
+  padding-top: 1rem;
+}
+
+/* Kategorijų kortelių patobulinimas */
+.help-center .home-card {
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.help-center .home-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--accent);
+  background: white;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+}
+
+/* Dokumentacijos nuorodos */
+.doc-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-teal);
+  text-decoration: none;
+  font-weight: 500;
+  margin-top: 1rem;
+  transition: opacity 0.2s;
+}
+
+.doc-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Kontaktų blokas apačioje */
+.help-contact-card {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, #2c5385 100%);
+  color: white;
+  border-radius: 24px;
+  padding: 3rem;
+  text-align: center;
+  margin-top: 4rem;
+}
+
+.help-contact-card h3 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.help-contact-card p {
+  opacity: 0.9;
+  margin-bottom: 2rem;
+}
+.privacy-content h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.privacy-content p, .privacy-content li {
+  font-size: 1.1rem;
+  color: #475569;
+}
+
+.privacy-content ul li {
+  margin-bottom: 0.5rem;
+  position: relative;
+  list-style: none;
+}
+
+.privacy-content ul li::before {
+  content: "•";
+  color: var(--primary-teal);
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+.home-footer {
+  padding: 2rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  font-size: 0.9rem;
+}
+
+.home-footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.home-footer a:hover {
+  color: var(--primary-teal);
+}
+
+@media print {
+  .home-hero, .home-ctas {
+    display: none;
+  }
+  .faq-container {
+    margin: 0;
+    max-width: 100%;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .help-search-container {
+    padding: 0 1rem;
+  }
+  
+  .help-contact-card {
+    padding: 2rem 1rem;
+    border-radius: 0;
+  }
+  
+  .faq-question {
+    font-size: 1rem;
+  }
+}
