@@ -97,11 +97,11 @@ export default function HomePage() {
         let data: { jobs: HomeJob[] };
         try {
           data = await apiFetch<{ jobs: HomeJob[] }>(
-            "/analysis-jobs/?uploaded_by_user_id=1&grouped=true&limit=12"
+            "/analysis-jobs/?grouped=true&limit=12"
           );
         } catch {
           data = await apiFetch<{ jobs: HomeJob[] }>(
-            "/analysis-jobs/?uploaded_by_user_id=1&limit=12"
+            "/analysis-jobs/?limit=12"
           );
         }
         if (!cancelled) {
@@ -165,7 +165,11 @@ export default function HomePage() {
             + Math.sin(x * w.freq + t * w.speed + w.offset) * w.amp
             + Math.sin(x * w.freq * 2.3 + t * w.speed * 1.4) * (w.amp * 0.4)
             + spike;
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
         }
         ctx.stroke();
       });

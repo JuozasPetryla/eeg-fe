@@ -98,6 +98,10 @@ export default function NightPage() {
     setFiles((prev) => [...prev, ...Array.from(selectedFiles)]);
   };
 
+  const removeSelectedFile = (indexToRemove: number) => {
+    setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   useEffect(() => {
     const batchIdParam = searchParams.get("batchId");
     const jobIdParam = searchParams.get("jobId");
@@ -229,8 +233,6 @@ export default function NightPage() {
       if (files.length === 1) {
         const formData = new FormData();
         formData.append("file", files[0]);
-        formData.append("uploaded_by_user_id", "1");
-        formData.append("patient_id", "1");
         formData.append("analysis_type", "night");
 
         const response = await apiRequest("/files/upload", {
@@ -250,8 +252,6 @@ export default function NightPage() {
 
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
-      formData.append("uploaded_by_user_id", "1");
-      formData.append("patient_id", "1");
       formData.append("analysis_type", "night");
 
       const response = await apiRequest("/files/upload-batch", {
@@ -295,7 +295,17 @@ export default function NightPage() {
         {files.length > 0 && (
           <div className="np-files">
             {files.map((file, index) => (
-              <p key={`${file.name}-${index}`}>{file.name}</p>
+              <div key={`${file.name}-${index}`} className="np-file-item">
+                <span>{file.name}</span>
+                <button
+                  type="button"
+                  className="np-file-remove"
+                  onClick={() => removeSelectedFile(index)}
+                  aria-label={`Pašalinti failą ${file.name}`}
+                >
+                  ×
+                </button>
+              </div>
             ))}
           </div>
         )}

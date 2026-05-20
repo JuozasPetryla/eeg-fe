@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { login } from "../api/api";
 import "./auth.css";
 
 export default function LoginPage() {
@@ -14,21 +15,22 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:8000/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail ?? "Prisijungti nepavyko.");
-      }
-
-      const data = await res.json();
-      localStorage.setItem("token", data.access_token);
+      await login(email, password);
       window.location.href = "/";
     } catch (err) {
+      if (err instanceof Error && err.message.startsWith("API error")) {
+        const match = err.message.match(/API error \d+:\s*(.*)$/s);
+        if (match?.[1]) {
+          try {
+            const parsed = JSON.parse(match[1]) as { detail?: string };
+            setError(parsed.detail ?? "Prisijungti nepavyko.");
+            return;
+          } catch {
+            setError(match[1]);
+            return;
+          }
+        }
+      }
       setError(err instanceof Error ? err.message : "Klaida.");
     } finally {
       setLoading(false);

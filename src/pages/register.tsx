@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { apiRequest } from "../api/api";
 import "./auth.css";
 
 export default function RegisterPage() {
@@ -22,10 +23,9 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/auth/register", {
+      const res = await apiRequest("/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ full_name: name, email, password }),
       });
 
       if (!res.ok) {

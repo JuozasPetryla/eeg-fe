@@ -331,14 +331,40 @@ body::after {
   margin-top: 10px;
   font-size: 0.85rem;
   color: #475569;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
 }
 
-.np-files p {
-  margin: 4px 0;
+.np-file-item {
   background: #f1f5f9;
   border-radius: 5px;
-  padding: 4px 10px;
-  display: inline-block;
+  padding: 4px 6px 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.np-file-remove {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.np-file-remove:hover {
+  background: #dbe4ee;
+  color: #1e293b;
 }
 
 /* ── Night viz options ───────────────────────────────── */
