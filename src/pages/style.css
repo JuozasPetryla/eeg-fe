@@ -539,6 +539,13 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .np-meta-grid p { margin: 0; font-size: 0.9rem; color: #1e3a5f; font-weight: 500; }
 
+.np-explanation {
+  margin-top: 12px;
+  font-size: 0.6rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
 /* ── Results table ───────────────────────────────────── */
 .np-table-wrap { overflow-x: auto; }
 
@@ -579,8 +586,9 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 .np-table__extra-td {
-  text-align: center;
+  text-align: left;
   border-left: 2px solid #f1f5f9;
+  font-size: 0.82rem;
 }
 
 .np-arrow {
