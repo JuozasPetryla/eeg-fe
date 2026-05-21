@@ -29,8 +29,23 @@ export default function RegisterPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail ?? "Registracija nepavyko.");
+        const data: any = await res.json().catch(() => ({}));
+        let message = "Registracija nepavyko.";
+        if (data) {
+          if (Array.isArray(data.detail)) {
+            // e.g. [{type: 'missing', loc: ['body','email'], msg: 'Field required'}]
+            message = data.detail
+              .map((d: any) => (d.msg ? `${d.loc?.join(".") || ""}: ${d.msg}` : JSON.stringify(d)))
+              .join("; ");
+          } else if (typeof data.detail === "string") {
+            message = data.detail;
+          } else if (data.error) {
+            message = String(data.error);
+          } else if (Object.keys(data).length) {
+            message = JSON.stringify(data);
+          }
+        }
+        throw new Error(message);
       }
 
       window.location.href = "/login";
